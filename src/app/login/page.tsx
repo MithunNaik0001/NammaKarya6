@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address.' }),
+  email: z.string().min(1, { message: 'Email is required.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
 });
 
