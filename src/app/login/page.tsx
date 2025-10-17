@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }),
+  email: z.string().min(1, { message: 'Email is required.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
 });
 
@@ -52,14 +52,14 @@ export default function LoginPage() {
         title: 'Success',
         description: 'Logged in successfully.',
       });
-      router.push('/dashboard');
+      router.push('/');
     } else {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
         description: 'Invalid email or password.',
       });
-      form.setError('password', {
+      form.setError('root', {
         type: 'manual',
         message: 'Invalid email or password',
       });
@@ -118,6 +118,9 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+              {form.formState.errors.root && (
+                <FormMessage>{form.formState.errors.root.message}</FormMessage>
+              )}
               <Button
                 type="submit"
                 className="w-full"
