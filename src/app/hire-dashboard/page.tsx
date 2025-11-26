@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import SideNav from '@/components/app/side-nav';
+import Link from 'next/link';
 import { auth, db, storage, storageBucketName } from "../../lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref as sRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -14,6 +14,7 @@ type Stats = {
     application: number | string;
     savedCandidates: number | string;
 };
+
 
 type Job = {
     id: string;
@@ -274,55 +275,7 @@ export default function HireDashboardPage() {
 				.job-meta{font-size:.85rem;color:var(--color-text-subtle)}
 			`}</style>
 
-            <div className="dashboard-container">
-                <aside className="sidebar">
-                    <div className="logo">
-                        <span className="logo-dot" />NammaKarya
-                    </div>
-
-                    <div className="user-profile" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                        <div style={{ textAlign: 'center', marginBottom: 6 }}>
-                            <img src={photoPreview || "https://i.ibb.co/L8B8YgW/placeholder-profile.png"} alt="Profile" style={{ width: 70, height: 70, borderRadius: 12, objectFit: 'cover' }} />
-                        </div>
-
-                        <div style={{ textAlign: 'center' }}>
-                            {editingProfile ? (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: 'center' }}>
-                                    <input ref={nameInputRef} value={profileName} onChange={(e) => setProfileName(e.target.value)} style={{ padding: 6, borderRadius: 6, border: "1px solid var(--color-gray-border)", width: 180 }} />
-                                    <input value={profileMenuLabel} onChange={(e) => setProfileMenuLabel(e.target.value)} style={{ padding: 6, borderRadius: 6, border: "1px solid var(--color-gray-border)", width: 180 }} />
-                                    <input type="file" accept="image/*" onChange={handleFileChange} />
-                                    <div style={{ display: "flex", gap: 8 }}>
-                                        <button onClick={saveProfile} disabled={savingProfile} style={{ padding: "6px 10px", background: "var(--color-primary)", color: "white", border: "none", borderRadius: 6 }}>{savingProfile ? "Saving..." : "Save"}</button>
-                                        <button onClick={() => { setEditingProfile(false); setPhotoFile(null); setPhotoPreview(auth.currentUser?.photoURL || null); }} style={{ padding: "6px 10px", background: "transparent", border: "1px solid var(--color-gray-border)", borderRadius: 6 }}>Cancel</button>
-                                    </div>
-                                    {profileError && <div style={{ color: "#ef4444" }}>{profileError}</div>}
-                                </div>
-                            ) : (
-                                <>
-                                    <div style={{ fontWeight: 700 }}>{profileName}</div>
-                                    <div style={{ color: 'var(--color-text-subtle)' }}>{profileMenuLabel}</div>
-                                    <div style={{ marginTop: 8 }}>
-                                        <button onClick={() => setEditingProfile(true)} style={{ padding: "6px 10px", background: "transparent", border: "1px solid var(--color-gray-border)", borderRadius: 6 }}>Edit Profile</button>
-                                    </div>
-                                    {/* Debug Upload button removed for production UI */}
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Use shared SideNav component so navigation stays consistent */}
-                    <div>
-                        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                        {/* SideNav renders semantic Links */}
-                        <SideNav active="dashboard" />
-                    </div>
-
-
-                    <a className="logout">
-                        <span className="nav-icon">➡️</span> Logout
-                    </a>
-                </aside>
-
+            <div>
                 <main className="main-content">
                     <header className="top-header">
                         <nav className="nav-links">
@@ -468,4 +421,3 @@ export default function HireDashboardPage() {
         </div>
     );
 }
-

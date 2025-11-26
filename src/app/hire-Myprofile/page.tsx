@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from 'next/navigation';
 import { auth, db, storage, storageBucketName } from "../../lib/firebase";
 import { collection, doc, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 // We persist profile updates to Firestore only; avoid updating Auth profile here.
 
 export default function HireMyProfilePage() {
+    const searchParams = useSearchParams();
+    const editParam = searchParams?.get('edit');
+    const nameInputRef = useRef<HTMLInputElement | null>(null);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -25,6 +29,13 @@ export default function HireMyProfilePage() {
             setPhotoPreview(URL.createObjectURL(f));
         }
     }
+
+    useEffect(() => {
+        if (editParam === '1') {
+            // focus the name input when opened via ?edit=1
+            setTimeout(() => nameInputRef.current?.focus(), 50);
+        }
+    }, [editParam]);
 
     async function handleSave() {
         setSaving(true);
@@ -77,8 +88,7 @@ export default function HireMyProfilePage() {
             payload.storageBucket = storageBucketName || null;
 
             await setDoc(docRef, payload, { merge: true });
-
-            window.alert("Profile saved successfully.");
+            // No client-side alert shown; profile persisted to Firestore for server/client sync.
         } catch (e: any) {
             // Log full error for debugging
             // eslint-disable-next-line no-console
@@ -112,7 +122,7 @@ export default function HireMyProfilePage() {
 
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 15 }}>
                             <label style={{ fontWeight: 400, color: '#555', width: 80, minWidth: 80, paddingRight: 10, alignSelf: 'flex-start', paddingTop: 10 }}>Name:</label>
-                            <input value={name} onChange={(e) => setName(e.target.value)} className="info-input" style={{ fontWeight: 700, color: '#333', flexGrow: 1, padding: 10, border: '1px solid #ccc', borderRadius: 4, fontSize: '1rem' }} />
+                            <input ref={nameInputRef} value={name} onChange={(e) => setName(e.target.value)} className="info-input" style={{ fontWeight: 700, color: '#333', flexGrow: 1, padding: 10, border: '1px solid #ccc', borderRadius: 4, fontSize: '1rem' }} />
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 15 }}>

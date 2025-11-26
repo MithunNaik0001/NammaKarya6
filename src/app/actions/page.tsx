@@ -52,7 +52,7 @@ export default function ActionsPage() {
           </CardHeader>
           <CardContent>
             <Button asChild variant="secondary" className="w-full">
-              <Link href="#">Join as a Worker</Link>
+              <Link href="/seeker-professional">Join as a Worker</Link>
             </Button>
           </CardContent>
         </Card>

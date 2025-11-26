@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import SideNav from '@/components/app/side-nav';
+// SideNav is provided globally via `src/app/layout.tsx`; don't render a page-level sidebar here.
 
 export default function CandidateRequirementPage() {
 	const router = useRouter();
@@ -87,87 +87,79 @@ export default function CandidateRequirementPage() {
 	}
 
 	return (
-		<div className="min-h-screen">
-			<div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', minHeight: '100vh' }}>
-				<aside style={{ background: '#fff', padding: 20, borderRight: '1px solid #e6eef6' }}>
-					<SideNav active="post" />
-				</aside>
+		<div className="min-h-screen p-7 bg-gray-50">
+			<div className="mx-auto max-w-4xl">
+				<div className="bg-white rounded-xl p-6 shadow border">
+					<div className="flex items-center justify-between">
+						<h1 className="text-xl font-semibold mb-4">Candidate Requirement</h1>
+						<Link href="/hire-proffesion" className="text-sm text-blue-600 underline">Go to Hire Professional</Link>
+					</div>
 
-				<main className="p-7 bg-gray-50">
-					<div className="mx-auto max-w-4xl">
-						<div className="bg-white rounded-xl p-6 shadow border">
-							<div className="flex items-center justify-between">
-								<h1 className="text-xl font-semibold mb-4">Candidate Requirement</h1>
-								<Link href="/hire-proffesion" className="text-sm text-blue-600 underline">Go to Hire Professional</Link>
-							</div>
+					<div className="mb-4">
+						<label className="block font-semibold mb-2">Minimum education</label>
+						<div className="flex gap-2 flex-wrap">
+							{['10th', '12th', 'Diploma', 'Graduate'].map((lvl) => (
+								<button
+									key={lvl}
+									type="button"
+									onClick={() => toggleMulti(education, lvl, setEducation)}
+									className={`px-3 py-2 rounded-full border font-semibold ${education.includes(lvl) ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-transparent'}`}>
+									{lvl}
+								</button>
+							))}
+						</div>
+						<div className="text-sm text-gray-500 mt-2">Select one or more education levels.</div>
+					</div>
 
-							<div className="mb-4">
-								<label className="block font-semibold mb-2">Minimum education</label>
-								<div className="flex gap-2 flex-wrap">
-									{['10th', '12th', 'Diploma', 'Graduate'].map((lvl) => (
-										<button
-											key={lvl}
-											type="button"
-											onClick={() => toggleMulti(education, lvl, setEducation)}
-											className={`px-3 py-2 rounded-full border font-semibold ${education.includes(lvl) ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-transparent'}`}>
-											{lvl}
-										</button>
-									))}
-								</div>
-								<div className="text-sm text-gray-500 mt-2">Select one or more education levels.</div>
-							</div>
+					<div className="mb-4">
+						<label className="block font-semibold mb-2">Experience</label>
+						<div className="flex gap-2 flex-wrap">
+							{['Less than 1 year', '1-3 years', '3-5 years', '5-10 years'].map((opt) => (
+								<button
+									key={opt}
+									type="button"
+									onClick={() => toggleMulti(experience, opt, setExperience)}
+									className={`px-3 py-2 rounded-full border font-semibold ${experience.includes(opt) ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-transparent'}`}>
+									{opt}
+								</button>
+							))}
+						</div>
+						<div className="text-sm text-gray-500 mt-2">Choose one or more applicable ranges.</div>
+					</div>
 
-							<div className="mb-4">
-								<label className="block font-semibold mb-2">Experience</label>
-								<div className="flex gap-2 flex-wrap">
-									{['Less than 1 year', '1-3 years', '3-5 years', '5-10 years'].map((opt) => (
-										<button
-											key={opt}
-											type="button"
-											onClick={() => toggleMulti(experience, opt, setExperience)}
-											className={`px-3 py-2 rounded-full border font-semibold ${experience.includes(opt) ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-transparent'}`}>
-											{opt}
-										</button>
-									))}
-								</div>
-								<div className="text-sm text-gray-500 mt-2">Choose one or more applicable ranges.</div>
-							</div>
+					<div className="mb-4">
+						<label className="block font-semibold mb-2">Preferred gender</label>
+						<div className="flex gap-4 items-center">
+							{['Male', 'Female', 'Other'].map((g) => (
+								<label key={g} className="inline-flex items-center gap-2">
+									<input type="radio" name="gender" value={g} checked={gender === g} onChange={() => setGender(g)} />
+									<span>{g}</span>
+								</label>
+							))}
+						</div>
+						<div className="text-sm text-gray-500 mt-2">Optional — leave blank for no preference.</div>
+					</div>
 
-							<div className="mb-4">
-								<label className="block font-semibold mb-2">Preferred gender</label>
-								<div className="flex gap-4 items-center">
-									{['Male', 'Female', 'Other'].map((g) => (
-										<label key={g} className="inline-flex items-center gap-2">
-											<input type="radio" name="gender" value={g} checked={gender === g} onChange={() => setGender(g)} />
-											<span>{g}</span>
-										</label>
-									))}
-								</div>
-								<div className="text-sm text-gray-500 mt-2">Optional — leave blank for no preference.</div>
-							</div>
-
-							<div className="mb-4">
-								<label className="block font-semibold mb-2">Mobile Number</label>
-								<input className="p-2.5 rounded-md border mr-3" placeholder="Enter mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} />
-								<div className="mt-3">
-									<label className="block font-semibold mb-2">WhatsApp Number</label>
-									<input className="p-2.5 rounded-md border" placeholder="Enter WhatsApp number" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-								</div>
-							</div>
-
-							<div className="flex gap-2 mt-4">
-								<button type="button" className="px-4 py-2 rounded-md bg-blue-600 text-white font-bold" onClick={onSave}>Save Requirement</button>
-								<button type="button" className="px-4 py-2 rounded-md border" onClick={onReset}>Reset</button>
-							</div>
-
-							<div className="mt-4">
-								<div aria-live="polite" className="result" style={{ display: resultVisible ? 'block' : 'none' }}>
-									<pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{feedback || ''}</pre>
-								</div>
-							</div>
+					<div className="mb-4">
+						<label className="block font-semibold mb-2">Mobile Number</label>
+						<input className="p-2.5 rounded-md border mr-3" placeholder="Enter mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+						<div className="mt-3">
+							<label className="block font-semibold mb-2">WhatsApp Number</label>
+							<input className="p-2.5 rounded-md border" placeholder="Enter WhatsApp number" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
 						</div>
 					</div>
-				</main>
+
+					<div className="flex gap-2 mt-4">
+						<button type="button" className="px-4 py-2 rounded-md bg-blue-600 text-white font-bold" onClick={onSave}>Save Requirement</button>
+						<button type="button" className="px-4 py-2 rounded-md border" onClick={onReset}>Reset</button>
+					</div>
+
+					<div className="mt-4">
+						<div aria-live="polite" className="result" style={{ display: resultVisible ? 'block' : 'none' }}>
+							<pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>{feedback || ''}</pre>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);

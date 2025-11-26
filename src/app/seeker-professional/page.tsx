@@ -16,11 +16,28 @@ export default function HireProffesionPage() {
     const [useCurrent, setUseCurrent] = useState<boolean>(false);
     const [cityTown, setCityTown] = useState<string>("");
     const [locality, setLocality] = useState<string>("");
-    const [searchJob, setSearchJob] = useState<string>("");
+    const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
     const [numJobs, setNumJobs] = useState<string>("");
     const [feedback, setFeedback] = useState<string | null>(null);
     const locBtnRef = useRef<HTMLButtonElement | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+
+    const jobOptions = [
+        'Plumber', 'Electrician', 'Carpenter', 'Painter', 'Mason', 'Welder',
+        'Driver', 'Delivery Driver', 'Cook', 'Housekeeper', 'Security Guard',
+        'Accountant', 'Nurse', 'Sales Executive', 'Data Entry Operator',
+        'Office Assistant', 'Machine Operator', 'Warehouse Worker',
+        'Admin/Office', 'Marketing/Sales', 'Designing', 'Mechanics',
+        'Tailoring', 'Photography', 'Agriculture'
+    ];
+
+    function toggleJob(job: string) {
+        if (selectedJobs.includes(job)) {
+            setSelectedJobs(selectedJobs.filter(j => j !== job));
+        } else {
+            setSelectedJobs([...selectedJobs, job]);
+        }
+    }
 
     function resetForm() {
         setMinIncome("");
@@ -31,7 +48,7 @@ export default function HireProffesionPage() {
         setUseCurrent(false);
         setCityTown("");
         setLocality("");
-        setSearchJob("");
+        setSelectedJobs([]);
         setNumJobs("");
         setFeedback(null);
     }
@@ -95,7 +112,7 @@ export default function HireProffesionPage() {
         }
 
         const payload = {
-            searchJob: searchJob.trim(),
+            selectedJobs: selectedJobs,
             numJobs,
             minIncome: minIncome === '' ? null : Number(minIncome),
             maxIncome: maxIncome === '' ? null : Number(maxIncome),
@@ -111,13 +128,13 @@ export default function HireProffesionPage() {
         setIsSaving(true);
         setFeedback('Saving...');
         try {
-            // add to Firestore collection named "proffessional"
-            await addDoc(collection(db, 'proffessional'), payload as any);
+            // add to Firestore collection named "seeker-proffessian"
+            await addDoc(collection(db, 'seeker-proffessian'), payload as any);
             setFeedback('Saved filters — preview in console.');
             // eslint-disable-next-line no-console
             console.log('Job filter payload saved to Firestore:', payload);
-            // navigate to candidate requirement page
-            router.push('/candidate-requirement');
+            // navigate to seeker-requirement page
+            router.push('/seeker-requirement');
         } catch (err) {
             console.error('Error saving to Firestore', err);
             setFeedback('Failed to save — see console for details.');
@@ -130,17 +147,39 @@ export default function HireProffesionPage() {
         <div className="min-h-screen bg-[linear-gradient(180deg,#eef3ff_0%,var(--bg)_100%)] p-7">
             <div className="mx-auto max-w-3xl">
                 <div className="bg-white rounded-xl shadow-md p-6 border" role="region" aria-labelledby="frmTitle">
-                    <div className="flex items-center justify-between">
-                        <h1 id="frmTitle" className="text-lg font-semibold">About job</h1>
-                        <Link href="/candidate-requirement" className="text-sm text-blue-600 underline">Go to Candidate Requirement</Link>
-                    </div>
+
                     <p className="text-sm text-gray-500 mb-4">Enter filters to search jobs. You can use current location to autofill city/locality.</p>
 
                     <form id="jobForm" onSubmit={onSubmit} noValidate>
                         <div className="mb-4">
-                            <label htmlFor="searchJob" className="block text-sm text-gray-600 mb-1">Search job</label>
-                            <input id="searchJob" name="searchJob" type="text" placeholder="e.g. Delivery driver, Accountant, Nurse" autoComplete="off" value={searchJob} onChange={(e) => setSearchJob(e.target.value)} className="w-full p-2.5 rounded-lg border" />
-                            <div className="text-sm text-gray-500 mt-1">Use keywords to find relevant roles.</div>
+                            <label className="block text-sm text-gray-600 mb-2">Select job roles (multiple)</label>
+                            <div className="border rounded-lg p-3 max-h-60 overflow-y-auto">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {jobOptions.map((job) => (
+                                        <label key={job} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedJobs.includes(job)}
+                                                onChange={() => toggleJob(job)}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm text-gray-700">{job}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1">
+                                Selected: {selectedJobs.length} job{selectedJobs.length !== 1 ? 's' : ''}
+                                {selectedJobs.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedJobs([])}
+                                        className="ml-3 text-red-600 hover:underline"
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex flex-wrap gap-4 mb-4">
@@ -157,9 +196,58 @@ export default function HireProffesionPage() {
 
                             <div className="flex-1 min-w-[200px]">
                                 <label className="block text-sm text-gray-600 mb-1">Monthly income (₹)</label>
-                                <div className="flex gap-2">
-                                    <input id="minIncome" name="minIncome" type="number" placeholder="Min" min={0} step={100} value={minIncome} onChange={(e) => { setMinIncome(e.target.value); syncIncome(e.target.value, maxIncome); }} className="flex-1 p-2.5 rounded-lg border" />
-                                    <input id="maxIncome" name="maxIncome" type="number" placeholder="Max" min={0} step={100} value={maxIncome} onChange={(e) => { setMaxIncome(e.target.value); syncIncome(minIncome, e.target.value); }} className="flex-1 p-2.5 rounded-lg border" />
+                                <div className="flex gap-2 items-center">
+                                    <div className="relative flex-1">
+                                        <input
+                                            id="minIncome"
+                                            name="minIncome"
+                                            type="number"
+                                            placeholder="Min"
+                                            min={0}
+                                            step={100}
+                                            value={minIncome}
+                                            onChange={(e) => { setMinIncome(e.target.value); syncIncome(e.target.value, maxIncome); }}
+                                            className="w-full p-2.5 pr-10 rounded-lg border focus:ring-2 focus:ring-blue-400"
+                                        />
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col">
+                                            <button
+                                                type="button"
+                                                onClick={() => { const newVal = String(Number(minIncome || 0) + 100); setMinIncome(newVal); syncIncome(newVal, maxIncome); }}
+                                                className="text-gray-500 hover:text-gray-700 leading-none"
+                                            >▴</button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { const newVal = String(Math.max(0, Number(minIncome || 0) - 100)); setMinIncome(newVal); syncIncome(newVal, maxIncome); }}
+                                                className="text-gray-500 hover:text-gray-700 leading-none"
+                                            >▾</button>
+                                        </div>
+                                    </div>
+                                    <span className="text-gray-400">—</span>
+                                    <div className="relative flex-1">
+                                        <input
+                                            id="maxIncome"
+                                            name="maxIncome"
+                                            type="number"
+                                            placeholder="Max"
+                                            min={0}
+                                            step={100}
+                                            value={maxIncome}
+                                            onChange={(e) => { setMaxIncome(e.target.value); syncIncome(minIncome, e.target.value); }}
+                                            className="w-full p-2.5 pr-10 rounded-lg border focus:ring-2 focus:ring-blue-400"
+                                        />
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col">
+                                            <button
+                                                type="button"
+                                                onClick={() => { const newVal = String(Number(maxIncome || 0) + 100); setMaxIncome(newVal); syncIncome(minIncome, newVal); }}
+                                                className="text-gray-500 hover:text-gray-700 leading-none"
+                                            >▴</button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { const newVal = String(Math.max(0, Number(maxIncome || 0) - 100)); setMaxIncome(newVal); syncIncome(minIncome, newVal); }}
+                                                className="text-gray-500 hover:text-gray-700 leading-none"
+                                            >▾</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 {incomeError && <div id="incomeError" className="text-sm text-red-600 mt-1">{incomeError}</div>}
                             </div>
@@ -207,11 +295,14 @@ export default function HireProffesionPage() {
                             <label htmlFor="cityTown" className="block text-sm text-gray-600 mb-1">Search city / town</label>
                             <input id="cityTown" name="cityTown" type="text" placeholder="e.g. Bengaluru, Mumbai" value={cityTown} onChange={(e) => setCityTown(e.target.value)} list="cityList" className="w-full p-2.5 rounded-lg border" />
                             <datalist id="cityList">
-                                <option value="Bengaluru" />
-                                <option value="Mumbai" />
-                                <option value="Delhi" />
-                                <option value="Chennai" />
-                                <option value="Kolkata" />
+                                <option value="sullai" />
+                                <option value="Putturu" />
+                                <option value="Madikeri" />
+                                <option value="Mangaluru" />
+                                <option value="Kundapur" />
+                                <option value="Kumta" />
+                                <option value="Honnavar" />
+                                <option value="Bhatkal" />
                             </datalist>
                         </div>
 
@@ -222,7 +313,7 @@ export default function HireProffesionPage() {
 
                         <div className="flex justify-end gap-3 mt-4">
                             <button type="button" id="resetBtn" onClick={(e) => { e.preventDefault(); resetForm(); }} className="px-4 py-2 rounded-md border bg-gray-100">Reset</button>
-                               <button type="submit" id="saveNext" className="px-4 py-2 rounded-md bg-blue-600 text-white">Save &amp; Next</button>
+                            <button type="submit" id="saveNext" className="px-4 py-2 rounded-md bg-blue-600 text-white">Save &amp; Next</button>
                         </div>
 
                         <input type="hidden" id="selectedShift" name="selectedShift" value={selectedShift} />

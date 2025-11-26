@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // proffessional collection
+    match /proffessional/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow read: if true;
+      allow update, delete: if false;
+    }
+
+    // candidate requirement collection
+    match /candidate-requermen/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow read: if true;
+      allow update, delete: if false;
+    }
+
+    // seeker-proffessian collection
+    match /seeker-proffessian/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow read: if true;
+      allow update, delete: if false;
+    }
+
+    // user profile collection
+    match /users/{userId} {
+      // user can read/write ONLY their own doc
+      allow read, write: if request.auth != null &&
+                          request.auth.uid == userId;
+    }
+
+    // Default: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

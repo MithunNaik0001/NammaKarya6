@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
-import SideNav from '@/components/app/side-nav';
+import SidebarWrapper from '@/components/app/sidebar-wrapper';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,14 +24,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', minHeight: '100vh' }}>
-          <aside style={{ background: 'var(--bg)', borderRight: '1px solid rgba(0,0,0,0.06)', padding: 20 }}>
-            <SideNav />
-          </aside>
-          <main>
-            {children}
-          </main>
-        </div>
+        <SidebarWrapper>
+          {children}
+        </SidebarWrapper>
         <Toaster />
       </body>
     </html>
