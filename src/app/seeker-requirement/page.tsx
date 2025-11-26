@@ -141,7 +141,7 @@ export default function CandidateRequirementPage() {
                     </div>
 
                     <div className="flex gap-2 mt-4">
-                        <button type="button" className="px-4 py-2 rounded-md bg-blue-600 text-white font-bold" onClick={onSave}>Save Requirement</button>
+                        <button type="button" className="px-4 py-2 rounded-md bg-blue-600 text-white font-bold" onClick={onSave}>Save & Next</button>
                         <button type="button" className="px-4 py-2 rounded-md border" onClick={onReset}>Reset</button>
                     </div>
 

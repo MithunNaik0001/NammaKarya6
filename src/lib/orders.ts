@@ -1,9 +1,9 @@
-import fs from 'fs/promises';
-import path from 'path';
+import { db } from './firebase';
+import { collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc, updateDoc } from 'firebase/firestore';
 
-const DATA_FILE = path.join(process.cwd(), 'payments.json');
+const ORDERS_COLLECTION = 'orders';
 
-type Order = {
+export type Order = {
     id: string;
     upi?: string;
     amount: number;
@@ -11,27 +11,11 @@ type Order = {
     status: 'pending' | 'paid' | 'failed';
     paymentIntentId?: string;
     createdAt: string;
+    userId: string;
     metadata?: Record<string, string>;
 };
 
-async function readStore(): Promise<Record<string, Order>> {
-    try {
-        const raw = await fs.readFile(DATA_FILE, 'utf8');
-        return JSON.parse(raw || '{}');
-    } catch (err: any) {
-        if (err.code === 'ENOENT') {
-            return {};
-        }
-        throw err;
-    }
-}
-
-async function writeStore(store: Record<string, Order>) {
-    await fs.writeFile(DATA_FILE, JSON.stringify(store, null, 2), 'utf8');
-}
-
 export async function createOrder(order: Omit<Order, 'createdAt' | 'status'>) {
-    const store = await readStore();
     const id = order.id;
     const now = new Date().toISOString();
     const newOrder: Order = {
@@ -40,50 +24,75 @@ export async function createOrder(order: Omit<Order, 'createdAt' | 'status'>) {
         createdAt: now,
         status: 'pending',
     };
-    store[id] = newOrder;
-    await writeStore(store);
+    const docRef = doc(db, ORDERS_COLLECTION, id);
+    await setDoc(docRef, newOrder);
     return newOrder;
 }
 
 export async function getOrder(id: string) {
-    const store = await readStore();
-    return store[id] ?? null;
+    const docRef = doc(db, ORDERS_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as Order;
+    }
+    return null;
 }
 
-export async function listOrders() {
-    const store = await readStore();
-    return Object.values(store).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+export async function listOrders(userId?: string) {
+    const ordersCol = collection(db, ORDERS_COLLECTION);
+    let q;
+    if (userId) {
+        q = query(ordersCol, where('userId', '==', userId));
+    } else {
+        q = ordersCol;
+    }
+    const snapshot = await getDocs(q);
+    const orders = snapshot.docs.map(doc => doc.data() as Order);
+    // Sort on client side to avoid needing a Firestore index
+    return orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 export async function markOrderPaid(id: string, paymentIntentId?: string) {
-    const store = await readStore();
-    const order = store[id];
-    if (!order) return null;
-    order.status = 'paid';
-    if (paymentIntentId) order.paymentIntentId = paymentIntentId;
-    await writeStore(store);
-    return order;
+    const docRef = doc(db, ORDERS_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+
+    const updates: any = { status: 'paid' };
+    if (paymentIntentId) updates.paymentIntentId = paymentIntentId;
+
+    await updateDoc(docRef, updates);
+    return { ...docSnap.data(), ...updates } as Order;
 }
 
 export async function markOrderFailed(id: string) {
-    const store = await readStore();
-    const order = store[id];
-    if (!order) return null;
-    order.status = 'failed';
-    await writeStore(store);
-    return order;
+    const docRef = doc(db, ORDERS_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return null;
+
+    await updateDoc(docRef, { status: 'failed' });
+    return { ...docSnap.data(), status: 'failed' } as Order;
 }
 
 export async function deleteOrder(id: string) {
-    const store = await readStore();
-    if (!store[id]) return false;
-    delete store[id];
-    await writeStore(store);
+    const docRef = doc(db, ORDERS_COLLECTION, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return false;
+
+    await deleteDoc(docRef);
     return true;
 }
 
-export async function deleteAllOrders() {
-    await writeStore({});
+export async function deleteAllOrders(userId?: string) {
+    const ordersCol = collection(db, ORDERS_COLLECTION);
+    let q;
+    if (userId) {
+        q = query(ordersCol, where('userId', '==', userId));
+    } else {
+        q = query(ordersCol);
+    }
+    const snapshot = await getDocs(q);
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
     return true;
 }
 

@@ -26,6 +26,42 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // seekerprofile collection (job seeker profile data)
+    match /seekerprofile/{docId} {
+      // Allow creating profile with matching user ID
+      allow create: if request.auth != null &&
+                    request.resource.data.createdBy == request.auth.uid &&
+                    docId == request.auth.uid;
+      // Public read access for all profiles
+      allow read: if true;
+      // Allow users to update only their own profile
+      allow update: if request.auth != null &&
+                    docId == request.auth.uid &&
+                    request.resource.data.createdBy == request.auth.uid;
+      // Allow users to delete only their own profile
+      allow delete: if request.auth != null &&
+                    docId == request.auth.uid;
+    }
+
+    // orders collection - users can only access their own orders
+    match /orders/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (
+                    // Allow reading if userId matches
+                    resource.data.userId == request.auth.uid ||
+                    // Allow reading documents without userId (for migration/cleanup)
+                    !('userId' in resource.data)
+                  );
+      allow update: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && (
+                    resource.data.userId == request.auth.uid ||
+                    // Allow deleting documents without userId (for cleanup)
+                    !('userId' in resource.data)
+                   );
+    }
+
     // user profile collection
     match /users/{userId} {
       // user can read/write ONLY their own doc

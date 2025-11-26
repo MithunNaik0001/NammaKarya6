@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 
 type Order = {
     id: string;
@@ -19,18 +22,53 @@ export default function Page(): JSX.Element {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
 
     useEffect(() => {
-        fetchOrders();
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setUserId(user.uid);
+                fetchOrders(user.uid);
+            } else {
+                setUserId(null);
+                setOrders([]);
+            }
+            setAuthLoading(false);
+        });
+        return () => unsubscribe();
     }, []);
 
-    async function fetchOrders() {
+    async function fetchOrders(uid?: string) {
+        const userIdToUse = uid || userId;
+        if (!userIdToUse) {
+            console.log('No userId available, skipping fetch');
+            return;
+        }
+
         try {
-            const res = await fetch('/api/orders');
-            const data = await res.json();
-            setOrders(data || []);
-        } catch (err) {
-            // ignore
+            // Ensure user is authenticated
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                console.log('User not authenticated, skipping fetch');
+                setOrders([]);
+                return;
+            }
+
+            // Query Firestore directly from client with proper authentication
+            const ordersCol = collection(db, 'orders');
+            const q = query(ordersCol, where('userId', '==', userIdToUse));
+            const snapshot = await getDocs(q);
+            const ordersData = snapshot.docs.map(doc => doc.data() as Order);
+            // Sort by createdAt descending
+            ordersData.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+            setOrders(ordersData);
+        } catch (err: any) {
+            console.error('Failed to fetch orders:', err);
+            if (err.code === 'permission-denied') {
+                console.error('Permission denied - check Firestore rules and authentication');
+            }
+            setOrders([]);
         }
     }
 
@@ -40,38 +78,49 @@ export default function Page(): JSX.Element {
     async function handlePay(e?: React.FormEvent) {
         if (e) e.preventDefault();
         setMessage('');
+        if (!userId) return setMessage('Please sign in to make a payment');
         if (!upi) return setMessage('Enter UPI ID');
-        if (Number(amount) < 1) return setMessage('Amount must be at least ₹1');
+        const amt = Number(amount);
+        if (amt < 1) return setMessage('Amount must be at least ₹1');
+        if (amt > 100000) return setMessage('Amount exceeds UPI limit. Maximum ₹1,00,000 per transaction');
+
         setLoading(true);
         try {
             setMessage('Creating payment...');
 
-            const res = await fetch('/api/create-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ upi, amount }),
-            });
-            const data = await res.json();
-            if (data.error) {
-                setMessage(data.error);
-                setLoading(false);
-                return;
-            }
+            // Create order ID
+            const orderId = `ord_${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+            const now = new Date().toISOString();
 
-            const upiDeepLink = data.upiDeepLink;
+            // Create order directly in Firestore from client
+            const orderData = {
+                id: orderId,
+                upi: upi.trim(),
+                amount: amt,
+                currency: 'INR',
+                status: 'pending' as const,
+                userId: userId,
+                createdAt: now,
+            };
+
+            await setDoc(doc(db, 'orders', orderId), orderData);
+
+            // Build UPI deep link
+            const payeeName = 'mams';
+            const upiDeepLink = `upi://pay?pa=${encodeURIComponent(upi.trim())}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR&tn=Order ${orderId}`;
 
             setMessage('Opening UPI app...');
 
-            // Try to open UPI app directly without opening a new window first
-            // This prevents the about:blank issue
+            // Try to open UPI app directly
             window.location.href = upiDeepLink;
 
             // Give some time for the UPI app to open, then start polling
             setTimeout(() => {
-                pollStatus(data.orderId);
+                pollStatus(orderId);
                 setShowForm(false);
             }, 1000);
         } catch (err: any) {
+            console.error('Error creating payment:', err);
             setMessage(String(err?.message || err));
             setLoading(false);
         }
@@ -82,10 +131,11 @@ export default function Page(): JSX.Element {
         const timeout = 1000 * 60 * 5; // 5 minutes
         const tick = async () => {
             try {
-                const res = await fetch(`/api/order/${orderId}`);
-                if (res.status === 200) {
-                    const data = await res.json();
-                    if (data.status === 'paid') {
+                // Check order status directly from Firestore
+                const orderDoc = await getDoc(doc(db, 'orders', orderId));
+                if (orderDoc.exists()) {
+                    const orderData = orderDoc.data();
+                    if (orderData.status === 'paid') {
                         setMessage('Payment successful — updating history');
                         setLoading(false);
                         await fetchOrders();
@@ -93,7 +143,7 @@ export default function Page(): JSX.Element {
                     }
                 }
             } catch (err) {
-                // ignore
+                console.error('Error polling status:', err);
             }
             if (Date.now() - start > timeout) {
                 setMessage('Timed out waiting for payment confirmation');
@@ -106,6 +156,7 @@ export default function Page(): JSX.Element {
     }
 
     async function deleteOrder(orderId: string) {
+        if (!userId) return;
         if (!confirm('Delete this payment record?')) return;
 
         try {
@@ -126,24 +177,49 @@ export default function Page(): JSX.Element {
     }
 
     async function clearAllHistory() {
+        if (!userId) return;
         if (!confirm('Delete ALL payment history? This cannot be undone.')) return;
 
         try {
             setMessage('Deleting all records...');
-            const res = await fetch('/api/orders', {
-                method: 'DELETE',
-            });
 
-            if (res.ok) {
-                setMessage('All payment history cleared');
-                setOrders([]);
-            } else {
-                const data = await res.json();
-                setMessage(data.error || 'Failed to clear history');
-            }
+            // Delete directly from Firestore on client side
+            const ordersCol = collection(db, 'orders');
+            const q = query(ordersCol, where('userId', '==', userId));
+            const snapshot = await getDocs(q);
+
+            const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(deletePromises);
+
+            setMessage('All payment history cleared');
+            setOrders([]);
         } catch (err: any) {
+            console.error('Error clearing history:', err);
             setMessage(String(err?.message || err));
         }
+    }
+
+    if (authLoading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
+                <div className="dashboard-container">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!userId) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
+                <div className="dashboard-container">
+                    <h1>Payment History</h1>
+                    <p style={{ textAlign: 'center', marginTop: 20 }}>
+                        Please <a href="/login" style={{ color: '#3cbbe5ff', textDecoration: 'underline' }}>sign in</a> to view your payment history.
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     return (

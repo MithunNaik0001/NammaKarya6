@@ -11,6 +11,12 @@ export async function POST(req: Request) {
         const amount = Number(body.amount) || 1; // INR
         const amountPaise = Math.round(amount * 100);
 
+        // Get userId from request header (sent from client)
+        const userId = req.headers.get('x-user-id');
+        if (!userId) {
+            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        }
+
         // UPI transaction limits (per transaction):
         // Most banks: ₹1,00,000 per transaction
         // Some banks (like SBI, ICICI): ₹1,00,000
@@ -52,7 +58,7 @@ export async function POST(req: Request) {
             // do not confirm here; we use the deep-link flow
         });
 
-        await createOrder({ id: orderId, upi, amount: amountPaise, currency: 'INR', paymentIntentId: pi.id });
+        await createOrder({ id: orderId, upi, amount: amountPaise, currency: 'INR', paymentIntentId: pi.id, userId });
 
         // Build a UPI deep link which Android devices (Google Pay, PhonePe, etc.) will open.
         // Standard UPI parameters:
