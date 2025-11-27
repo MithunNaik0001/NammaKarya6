@@ -178,7 +178,7 @@ export default function SeekerSidebar({ activePage = 'dashboard' }: SeekerSideba
                         <span className="nav-icon">📝</span>
                         Applied jobs
                     </Link>
-                    <Link href="/find-job" className={`nav-link ${activePage === 'find-jobs' ? 'active' : ''}`}>
+                    <Link href="/seeker-jobs" className={`nav-link ${activePage === 'find-jobs' ? 'active' : ''}`}>
                         <span className="nav-icon">🔍</span>
                         Find Jobs
                     </Link>

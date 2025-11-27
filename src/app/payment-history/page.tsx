@@ -105,16 +105,20 @@ export default function Page(): JSX.Element {
 
             await setDoc(doc(db, 'orders', orderId), orderData);
 
-            // Build UPI deep link
-            const payeeName = 'mams';
-            const upiDeepLink = `upi://pay?pa=${encodeURIComponent(upi.trim())}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR&tn=Order ${orderId}`;
+            // Build Google Pay UPI deep link
+            const payeeName = 'NammaKarya';
+            const upiId = upi.trim();
+            const transactionNote = `Order ${orderId}`;
 
-            setMessage('Opening UPI app...');
+            // Google Pay specific deep link (tez:// protocol)
+            const googlePayLink = `tez://upi/pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amt}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
 
-            // Try to open UPI app directly
-            window.location.href = upiDeepLink;
+            setMessage('Opening Google Pay...');
 
-            // Give some time for the UPI app to open, then start polling
+            // Open Google Pay app
+            window.location.href = googlePayLink;
+
+            // Give some time for the Google Pay app to open, then start polling
             setTimeout(() => {
                 pollStatus(orderId);
                 setShowForm(false);
@@ -160,18 +164,12 @@ export default function Page(): JSX.Element {
         if (!confirm('Delete this payment record?')) return;
 
         try {
-            const res = await fetch(`/api/order/${orderId}`, {
-                method: 'DELETE',
-            });
-
-            if (res.ok) {
-                setMessage('Payment record deleted');
-                await fetchOrders();
-            } else {
-                const data = await res.json();
-                setMessage(data.error || 'Failed to delete');
-            }
+            // Delete directly from Firestore on client side with proper authentication
+            await deleteDoc(doc(db, 'orders', orderId));
+            setMessage('Payment record deleted');
+            await fetchOrders();
         } catch (err: any) {
+            console.error('Error deleting order:', err);
             setMessage(String(err?.message || err));
         }
     }
@@ -299,7 +297,7 @@ export default function Page(): JSX.Element {
                                             {o.status}
                                         </div>
                                     </td>
-                                    <td>{fmtINR(o.amount / 100)}</td>
+                                    <td>{fmtINR(o.amount)}</td>
                                     <td>{new Date(o.createdAt).toLocaleString()}</td>
                                     <td>{o.upi ?? ''}</td>
                                     <td>
@@ -324,18 +322,51 @@ export default function Page(): JSX.Element {
             </div>
 
             {showForm && (
-                <div style={{ position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowForm(false)}>
-                    <form onClick={(e) => e.stopPropagation()} onSubmit={handlePay} style={{ background: '#fff', padding: 20, borderRadius: 8, width: 320 }}>
-                        <h3>Pay with Google Pay</h3>
-                        <label style={{ display: 'block', marginBottom: 8 }}>UPI ID
-                            <input style={{ width: '100%', padding: 8, marginTop: 6 }} value={upi} onChange={(e) => setUpi(e.target.value)} placeholder="example@okaxis" />
+                <div style={{ position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowForm(false)}>
+                    <form onClick={(e) => e.stopPropagation()} onSubmit={handlePay} style={{ background: '#fff', padding: 24, borderRadius: 12, width: 360, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+                        <h3 style={{ margin: '0 0 20px 0', fontSize: '1.3rem', color: '#333' }}>Pay with Google Pay</h3>
+
+                        <label style={{ display: 'block', marginBottom: 16 }}>
+                            <span style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#555' }}>UPI ID</span>
+                            <input
+                                type="text"
+                                style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: '0.95rem' }}
+                                value={upi}
+                                onChange={(e) => setUpi(e.target.value)}
+                                placeholder="yourname@okaxis"
+                                required
+                            />
                         </label>
-                        <label style={{ display: 'block', marginBottom: 8 }}>Amount (INR)
-                            <input style={{ width: '100%', padding: 8, marginTop: 6 }} value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} />
+
+                        <label style={{ display: 'block', marginBottom: 20 }}>
+                            <span style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#555' }}>Amount (INR)</span>
+                            <input
+                                type="number"
+                                style={{ width: '100%', padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: '0.95rem' }}
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder="Enter amount"
+                                min="1"
+                                max="100000"
+                                required
+                            />
                         </label>
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                            <button type="button" onClick={() => setShowForm(false)} className="details-btn">Cancel</button>
-                            <button type="submit" className="details-btn" style={{ background: '#34b37d', color: '#fff' }} disabled={loading}>{loading ? 'Opening...' : 'Pay'}</button>
+
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowForm(false)}
+                                style={{ padding: '10px 20px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, cursor: 'pointer', fontSize: '0.95rem' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                style={{ padding: '10px 24px', background: '#34b37d', color: '#fff', border: 'none', borderRadius: 6, cursor: loading ? 'not-allowed' : 'pointer', fontSize: '0.95rem', fontWeight: 500 }}
+                                disabled={loading}
+                            >
+                                {loading ? 'Opening Google Pay...' : 'Pay Now'}
+                            </button>
                         </div>
                     </form>
                 </div>

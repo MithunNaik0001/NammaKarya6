@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from 'next/link';
 import { auth, db, storage, storageBucketName } from "../../lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { ref as sRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 // Note: we no longer call `updateProfile` on the Auth user here; profile changes
 // are persisted to Firestore only to avoid requiring auth updates from the client.
@@ -162,6 +162,32 @@ export default function HireDashboardPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [manualFetch, setManualFetch] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Fetch unread notifications count
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                const q = query(
+                    collection(db, "notifications"),
+                    where("recipientId", "==", user.uid),
+                    where("read", "==", false)
+                );
+                const snapshot = await getDocs(q);
+                setUnreadCount(snapshot.size);
+            } catch (err) {
+                console.error("Error fetching notifications:", err);
+            }
+        };
+
+        fetchUnreadCount();
+        // Refresh every 30 seconds
+        const interval = setInterval(fetchUnreadCount, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     // fetchAll is defined outside the effect so it can be called manually (Refresh button)
     const fetchAll = async () => {
@@ -246,6 +272,9 @@ export default function HireDashboardPage() {
 				.nav-links a:hover{color:var(--color-primary)}
 				.search-area{display:flex;align-items:center}
 				.search-input{padding:10px 15px;border:1px solid var(--color-gray-border);border-radius:8px;margin-right:15px;width:250px}
+				.notification-bell{position:relative;margin-right:15px;cursor:pointer;background:none;border:none;font-size:1.5rem;padding:8px;border-radius:50%;transition:background-color .2s}
+				.notification-bell:hover{background-color:var(--color-bg-light)}
+				.notification-badge{position:absolute;top:5px;right:5px;background-color:#ef4444;color:white;font-size:0.7rem;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
 				.post-job-btn{background-color:var(--color-primary);color:white;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;display:flex;align-items:center}
 				.post-job-btn::before{content:'+';font-size:1.2rem;margin-right:5px}
 				.dashboard-body h2{font-size:1.8rem;margin-bottom:20px}
@@ -287,6 +316,14 @@ export default function HireDashboardPage() {
                         </nav>
                         <div className="search-area">
                             <input className="search-input" placeholder="🔍 Search here..." />
+                            <Link href="/notifications">
+                                <button className="notification-bell" title="Notifications">
+                                    🔔
+                                    {unreadCount > 0 && (
+                                        <span className="notification-badge">{unreadCount}</span>
+                                    )}
+                                </button>
+                            </Link>
                             <button className="post-job-btn">Post a Job</button>
                         </div>
                     </header>

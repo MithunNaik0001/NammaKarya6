@@ -662,7 +662,7 @@ export default function SeekerAppliedJobsPage() {
                                     </svg>
                                     <h3>No Applications Yet</h3>
                                     <p>You haven't applied to any jobs yet. Start exploring opportunities!</p>
-                                    <Link href="/find-job">
+                                    <Link href="/seeker-jobs">
                                         <button className="btn btn-primary">Browse Jobs</button>
                                     </Link>
                                 </div>
