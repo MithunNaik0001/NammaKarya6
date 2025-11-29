@@ -25,19 +25,19 @@ export default function SideNav({ active }: Props) {
 
     return (
         <nav className="main-nav">
-            <Link href="/hire-dashboard" className={linkClass('dashboard')}>
+            <Link href="/hire-dashboard" className={linkClass('dashboard')} prefetch={true}>
                 <span className="nav-icon">📊</span> Dashboard
             </Link>
-            <Link href="/hire-Myprofile" className={linkClass('profile')}>
+            <Link href="/hire-Myprofile" className={linkClass('profile')} prefetch={true}>
                 <span className="nav-icon">👤</span> My Profile
             </Link>
-            <Link href="/payment-history" className={linkClass('payments')}>
+            <Link href="/payment-history" className={linkClass('payments')} prefetch={true}>
                 <span className="nav-icon">💼</span> Payment History
             </Link>
-            <Link href="/post-job" className={linkClass('post')}>
+            <Link href="/post-job" className={linkClass('post')} prefetch={true}>
                 <span className="nav-icon">✉️</span> Post a job
             </Link>
-            <Link href="/find-job" className={linkClass('find')}>
+            <Link href="/find-job" className={linkClass('find')} prefetch={true}>
                 <span className="nav-icon">➡️</span> Find job
             </Link>
         </nav>

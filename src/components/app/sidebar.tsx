@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import {
+  MdDashboard,
+  MdPerson,
+  MdPayment,
+  MdWork,
+  MdSearch,
+  MdLogout
+} from 'react-icons/md';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -61,15 +69,23 @@ export default function Sidebar() {
   const isActive = (path: string) => mounted && !!pathname && pathname.startsWith(path);
 
   return (
-    <aside style={{ background: 'hsl(var(--sidebar-background))', borderRight: '1px solid hsl(var(--sidebar-border) / 0.6)', padding: 20, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 20, display: 'flex', alignItems: 'center' }}>
-        <span style={{ width: 10, height: 10, borderRadius: 6, background: 'hsl(var(--sidebar-primary))', display: 'inline-block', marginRight: 8 }} />
-        NammaKarya
+    <aside style={{ background: 'hsl(var(--sidebar-background))', borderRight: '1px solid hsl(var(--sidebar-border) / 0.6)', padding: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        padding: '20px',
+
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <img src="logo.png" alt="NammaKarya Logo" style={{ height: '40px', width: '40px', borderRadius: '8px' }} />
+        <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'black' }}>NammaKarya</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 12, padding: '0 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 6 }}>
-          <img src={photoURL || "https://i.ibb.co/L8B8YgW/placeholder-profile.png"} alt="Profile" style={{ width: 70, height: 70, borderRadius: 12, objectFit: 'cover' }} />
+          <img src={photoURL || "https://i.ibb.co/L8B8YgW/placeholder-profile.png"} alt="Profile" style={{ width: 70, height: 70, borderRadius: 12, objectFit: 'cover', border: '3px solid #F1B902', boxShadow: '0 2px 8px rgba(241, 185, 2, 0.3)' }} />
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontWeight: 700, color: 'hsl(var(--sidebar-foreground))' }}>{profileName}</div>
@@ -77,13 +93,13 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav aria-label="Primary" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <nav aria-label="Primary" style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 20px' }}>
         {[
-          { href: '/hire-dashboard', icon: '📊', label: 'Dashboard' },
-          { href: '/hire-Myprofile', icon: '👤', label: 'My Profile' },
-          { href: '/payment-history', icon: '💼', label: 'Payment History' },
-          { href: '/hire-proffesion', icon: '✉️', label: 'Post a job' },
-          { href: '/find-job', icon: '➡️', label: 'Find job' },
+          { href: '/hire-dashboard', icon: MdDashboard, label: 'Dashboard' },
+          { href: '/hire-Myprofile', icon: MdPerson, label: 'My Profile' },
+          { href: '/payment-history', icon: MdPayment, label: 'Payment History' },
+          { href: '/hire-proffesion', icon: MdWork, label: 'Post a job' },
+          { href: '/find-job', icon: MdSearch, label: 'Find job' },
         ].map((item) => {
           const active = isActive(item.href);
           return (
@@ -96,22 +112,22 @@ export default function Sidebar() {
                 padding: '12px 15px',
                 margin: '4px 0',
                 borderRadius: 8,
-                color: active ? 'hsl(var(--sidebar-primary-foreground))' : 'hsl(var(--sidebar-foreground), 1)',
-                backgroundColor: active ? 'hsl(var(--sidebar-primary))' : 'transparent',
+                color: active ? 'white' : 'hsl(var(--sidebar-foreground), 1)',
+                backgroundColor: active ? '#F1B902' : 'transparent',
                 textDecoration: 'none',
                 gap: 12,
               }}
             >
-              <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+              <item.icon style={{ fontSize: '1.2rem' }} />
               <span style={{ fontWeight: 500 }}>{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div style={{ marginTop: 'auto' }}>
-        <a className="logout" style={{ color: 'var(--color-text-subtle)', textDecoration: 'none', display: 'flex', alignItems: 'center', fontSize: '.9rem' }}>
-          <span className="nav-icon">➡️</span> Logout
+      <div style={{ marginTop: 'auto', padding: '0 20px 20px' }}>
+        <a className="logout" style={{ color: 'var(--color-text-subtle)', textDecoration: 'none', display: 'flex', alignItems: 'center', fontSize: '.9rem', gap: '8px' }}>
+          <MdLogout style={{ fontSize: '1rem' }} /> Logout
         </a>
       </div>
     </aside>

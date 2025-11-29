@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from 'next/navigation';
 import { auth, db, storage, storageBucketName } from "../../lib/firebase";
-import { collection, doc, setDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, addDoc, serverTimestamp, getDoc, onSnapshot } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 // We persist profile updates to Firestore only; avoid updating Auth profile here.
 
@@ -21,6 +21,8 @@ export default function HireMyProfilePage() {
     const [progress, setProgress] = useState<number | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [errorStack, setErrorStack] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
         const f = e.target.files && e.target.files[0];
@@ -37,9 +39,62 @@ export default function HireMyProfilePage() {
         }
     }, [editParam]);
 
+    // Load user profile data when component mounts
+    useEffect(() => {
+        let unsubscribe: (() => void) | null = null;
+
+        const loadUserProfile = () => {
+            const user = auth.currentUser;
+            if (user && user.uid) {
+                const userDocRef = doc(db, "users", user.uid);
+
+                // Set up real-time listener for user profile
+                unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const userData = docSnap.data();
+                        setName(userData.name || "");
+                        setEmail(userData.email || user.email || "");
+                        setPhone(userData.phone || "");
+                        setAddress(userData.address || "");
+                        if (userData.photoURL) {
+                            setPhotoPreview(userData.photoURL);
+                        }
+                    } else {
+                        // If no document exists, pre-fill email from auth
+                        setEmail(user.email || "");
+                    }
+                    setLoading(false);
+                }, (error) => {
+                    console.warn("Error loading user profile:", error);
+                    // Pre-fill email from auth even if doc doesn't exist
+                    setEmail(user.email || "");
+                    setLoading(false);
+                });
+            } else {
+                setLoading(false);
+            }
+        };
+
+        // Listen for auth state changes
+        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+            if (user) {
+                loadUserProfile();
+            } else {
+                setLoading(false);
+            }
+        });
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+            unsubscribeAuth();
+        };
+    }, []);
+
     async function handleSave() {
         setSaving(true);
         setProgress(null);
+        setErrorMsg(null);
+        setSuccessMsg(null);
         try {
             const user = auth.currentUser;
 
@@ -88,7 +143,9 @@ export default function HireMyProfilePage() {
             payload.storageBucket = storageBucketName || null;
 
             await setDoc(docRef, payload, { merge: true });
-            // No client-side alert shown; profile persisted to Firestore for server/client sync.
+            setSuccessMsg("Profile saved successfully!");
+            // Auto-clear success message after 3 seconds
+            setTimeout(() => setSuccessMsg(null), 3000);
         } catch (e: any) {
             // Log full error for debugging
             // eslint-disable-next-line no-console
@@ -105,14 +162,67 @@ export default function HireMyProfilePage() {
         }
     }
 
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '16px' }}>🔄</div>
+                    <div style={{ color: '#666', fontSize: '18px' }}>Loading your profile...</div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
-            <div style={{ width: '100%', maxWidth: 450 }}>
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100vh',
+            width: '100vw',
+            padding: '20px',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+            boxSizing: 'border-box'
+        }}>
+            <div style={{ width: '96%', maxWidth: '50vw' }}>
                 <div style={{ borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,.1)', background: '#fff' }}>
                     <div style={{ position: 'relative', background: '#555', height: 150, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
                         <div style={{ position: 'absolute', top: 15, left: 20, fontSize: 24, color: '#fff', backgroundColor: 'rgba(0,0,0,0.3)', padding: 6, borderRadius: 5 }}>NammaKarya</div>
-                        <div style={{ marginBottom: -70, zIndex: 10 }}>
-                            <img src={photoPreview || '/placeholder-profile.png'} alt="Profile" style={{ width: 140, height: 140, borderRadius: '50%', objectFit: 'cover', border: '5px solid #fff', boxShadow: '0 2px 10px rgba(0,0,0,.2)' }} />
+                        <div style={{ marginBottom: -70, zIndex: 10, position: 'relative' }}>
+                            <img
+                                src={photoPreview || 'https://i.ibb.co/L8B8YgW/placeholder-profile.png'}
+                                alt="Profile"
+                                style={{
+                                    width: 140,
+                                    height: 140,
+                                    borderRadius: '50%',
+                                    objectFit: 'cover',
+                                    border: '5px solid #fff',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,.3)'
+                                }}
+                            />
+                            <div style={{
+                                position: 'absolute',
+                                bottom: 5,
+                                right: 5,
+                                backgroundColor: '#F1B902',
+                                borderRadius: '50%',
+                                width: 35,
+                                height: 35,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(0,0,0,.2)'
+                            }}>
+                                <span style={{ color: 'white', fontSize: '18px' }}>📷</span>
+                            </div>
                         </div>
                     </div>
 
@@ -140,16 +250,72 @@ export default function HireMyProfilePage() {
                             <input value={address} onChange={(e) => setAddress(e.target.value)} className="info-input" style={{ fontWeight: 700, color: '#333', flexGrow: 1, padding: 10, border: '1px solid #ccc', borderRadius: 4, fontSize: '1rem' }} />
                         </div>
 
-                        <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <input type="file" accept="image/*" onChange={handleFile} />
-                            <button onClick={handleSave} disabled={saving} style={{ padding: '8px 12px', background: '#34d399', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save'}</button>
+                        <div style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <label htmlFor="profile-upload" style={{
+                                    padding: '10px 16px',
+                                    background: '#F1B902',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    boxShadow: '0 2px 8px rgba(241, 185, 2, 0.3)'
+                                }}>
+                                    📷 Choose Photo
+                                </label>
+                                <input
+                                    id="profile-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFile}
+                                    style={{ display: 'none' }}
+                                />
+                                {file && <span style={{ fontSize: '12px', color: '#666' }}>{file.name}</span>}
+                            </div>
+                            <button
+                                onClick={handleSave}
+                                disabled={saving}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: saving ? '#94a3b8' : '#34d399',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    cursor: saving ? 'not-allowed' : 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    boxShadow: '0 2px 8px rgba(52, 211, 153, 0.3)'
+                                }}
+                            >
+                                {saving ? 'Saving...' : 'Save Profile'}
+                            </button>
                         </div>
 
-                        {progress !== null && <div style={{ marginTop: 8 }}>Upload: {progress}%</div>}
+                        {progress !== null && (
+                            <div style={{ marginTop: 12, padding: 8, background: '#e0f2fe', border: '1px solid #0288d1', borderRadius: 6, textAlign: 'center' }}>
+                                <div style={{ color: '#0288d1', fontSize: '14px' }}>Uploading: {progress}%</div>
+                            </div>
+                        )}
+
+                        {successMsg && (
+                            <div style={{ marginTop: 12, padding: 10, background: '#e8f5e8', border: '1px solid #4caf50', borderRadius: 6 }}>
+                                <div style={{ fontWeight: 700, color: '#2e7d32', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    ✅ {successMsg}
+                                </div>
+                            </div>
+                        )}
+
                         {errorMsg && (
                             <div style={{ marginTop: 12, padding: 10, background: '#fee', border: '1px solid #fbb', borderRadius: 6 }}>
-                                <div style={{ fontWeight: 700, color: '#900' }}>Save Error</div>
-                                <div style={{ color: '#300' }}>{errorMsg}</div>
+                                <div style={{ fontWeight: 700, color: '#900', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    ❌ Save Error
+                                </div>
+                                <div style={{ color: '#300', marginTop: 4 }}>{errorMsg}</div>
                                 {errorStack && <details style={{ marginTop: 8 }}><summary>Stack</summary><pre style={{ whiteSpace: 'pre-wrap' }}>{errorStack}</pre></details>}
                             </div>
                         )}

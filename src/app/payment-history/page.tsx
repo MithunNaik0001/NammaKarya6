@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { MdPayment, MdCheckCircle, MdCancel, MdPending, MdDelete, MdInfo, MdClear } from 'react-icons/md';
 import { collection, query, where, getDocs, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 
 type Order = {
@@ -228,9 +229,10 @@ export default function Page(): JSX.Element {
                     <div style={{ marginBottom: 20, textAlign: 'right' }}>
                         <button
                             className="details-btn"
-                            style={{ background: '#3cbbe5ff', color: '#fff' }}
+                            style={{ background: '#3cbbe5ff', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}
                             onClick={clearAllHistory}
                         >
+                            <MdClear size={18} />
                             Clear All History
                         </button>
                     </div>
@@ -293,7 +295,13 @@ export default function Page(): JSX.Element {
                                 <tr key={o.id} className={o.status === 'pending' ? 'on-hold-row' : ''}>
                                     <td>
                                         <div className="status">
-                                            <span className={`status-dot ${o.status === 'paid' ? 'dot-proceed' : o.status === 'failed' ? 'dot-canceled' : 'dot-on-hold'}`} />
+                                            {o.status === 'paid' ? (
+                                                <MdCheckCircle size={18} color="#34b37d" />
+                                            ) : o.status === 'failed' ? (
+                                                <MdCancel size={18} color="#e54c3c" />
+                                            ) : (
+                                                <MdPending size={18} color="#f4c444" />
+                                            )}
                                             {o.status}
                                         </div>
                                     </td>
@@ -302,12 +310,16 @@ export default function Page(): JSX.Element {
                                     <td>{o.upi ?? ''}</td>
                                     <td>
                                         <div style={{ display: 'flex', gap: 8 }}>
-                                            <button className="details-btn" onClick={() => alert(JSON.stringify(o, null, 2))}>Details</button>
+                                            <button className="details-btn" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => alert(JSON.stringify(o, null, 2))}>
+                                                <MdInfo size={16} />
+                                                Details
+                                            </button>
                                             <button
                                                 className="details-btn"
-                                                style={{ background: '#3ce5c9ff', color: '#fff' }}
+                                                style={{ background: '#3ce5c9ff', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}
                                                 onClick={() => deleteOrder(o.id)}
                                             >
+                                                <MdDelete size={16} />
                                                 Delete
                                             </button>
                                         </div>

@@ -92,7 +92,7 @@ export default function CandidateRequirementPage() {
 				<div className="bg-white rounded-xl p-6 shadow border">
 					<div className="flex items-center justify-between">
 						<h1 className="text-xl font-semibold mb-4">Candidate Requirement</h1>
-						<Link href="/hire-proffesion" className="text-sm text-blue-600 underline">Go to Hire Professional</Link>
+
 					</div>
 
 					<div className="mb-4">
@@ -103,7 +103,7 @@ export default function CandidateRequirementPage() {
 									key={lvl}
 									type="button"
 									onClick={() => toggleMulti(education, lvl, setEducation)}
-									className={`px-3 py-2 rounded-full border font-semibold ${education.includes(lvl) ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-transparent'}`}>
+									className={`px-3 py-2 rounded-full border font-semibold ${education.includes(lvl) ? 'bg-[#E1A800] text-white' : 'bg-transparent'}`}>
 									{lvl}
 								</button>
 							))}
@@ -119,7 +119,7 @@ export default function CandidateRequirementPage() {
 									key={opt}
 									type="button"
 									onClick={() => toggleMulti(experience, opt, setExperience)}
-									className={`px-3 py-2 rounded-full border font-semibold ${experience.includes(opt) ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-transparent'}`}>
+									className={`px-3 py-2 rounded-full border font-semibold ${experience.includes(opt) ? 'bg-[#E1A800] text-white' : 'bg-transparent'}`}>
 									{opt}
 								</button>
 							))}
@@ -150,8 +150,8 @@ export default function CandidateRequirementPage() {
 					</div>
 
 					<div className="flex gap-2 mt-4">
-						<button type="button" className="px-4 py-2 rounded-md bg-blue-600 text-white font-bold" onClick={onSave}>Save Requirement</button>
-						<button type="button" className="px-4 py-2 rounded-md border" onClick={onReset}>Reset</button>
+						<button type="button" className="px-4 py-2 rounded-md bg-[#E1A800] hover:bg-[#CC9600] text-white font-bold" onClick={onSave}>Save Requirement</button>
+						<button type="button" className="px-4 py-2 rounded-md border border-[#E1A800] text-[#E1A800] hover:bg-[#E1A800] hover:text-white" onClick={onReset}>Reset</button>
 					</div>
 
 					<div className="mt-4">

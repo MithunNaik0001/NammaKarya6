@@ -261,7 +261,7 @@ export default function HireProffesionPage() {
                                     { label: 'Day', value: 'day' },
                                     { label: 'Night', value: 'night' },
                                 ].map((opt) => (
-                                    <button key={opt.value} type="button" onClick={() => setSelectedShift(opt.value)} className={`px-3 py-2 rounded-full border ${selectedShift === opt.value ? 'bg-blue-500 text-white' : 'bg-white'}`} aria-pressed={selectedShift === opt.value}>{opt.label}</button>
+                                    <button key={opt.value} type="button" onClick={() => setSelectedShift(opt.value)} className={`px-3 py-2 rounded-full border ${selectedShift === opt.value ? 'text-white' : 'bg-white'}`} style={selectedShift === opt.value ? { backgroundColor: '#EFB702' } : {}} aria-pressed={selectedShift === opt.value}>{opt.label}</button>
                                 ))}
                             </div>
                         </div>
@@ -273,7 +273,7 @@ export default function HireProffesionPage() {
                                     { label: 'Field', value: 'field' },
                                     { label: 'Industry', value: 'industry' },
                                 ].map((opt) => (
-                                    <button key={opt.value} type="button" onClick={() => setSelectedType(opt.value)} className={`px-3 py-2 rounded-full border ${selectedType === opt.value ? 'bg-blue-500 text-white' : 'bg-white'}`} aria-pressed={selectedType === opt.value}>{opt.label}</button>
+                                    <button key={opt.value} type="button" onClick={() => setSelectedType(opt.value)} className={`px-3 py-2 rounded-full border ${selectedType === opt.value ? 'text-white' : 'bg-white'}`} style={selectedType === opt.value ? { backgroundColor: '#EFB702' } : {}} aria-pressed={selectedType === opt.value}>{opt.label}</button>
                                 ))}
                             </div>
                             <div className="text-sm text-gray-500 mt-2">Choose whether role is field-based or industry-based.</div>
@@ -313,7 +313,7 @@ export default function HireProffesionPage() {
 
                         <div className="flex justify-end gap-3 mt-4">
                             <button type="button" id="resetBtn" onClick={(e) => { e.preventDefault(); resetForm(); }} className="px-4 py-2 rounded-md border bg-gray-100">Reset</button>
-                            <button type="submit" id="saveNext" className="px-4 py-2 rounded-md bg-blue-600 text-white">Save &amp; Next</button>
+                            <button type="submit" id="saveNext" className="px-4 py-2 rounded-md text-white" style={{ backgroundColor: '#EFB702' }}>Save &amp; Next</button>
                         </div>
 
                         <input type="hidden" id="selectedShift" name="selectedShift" value={selectedShift} />

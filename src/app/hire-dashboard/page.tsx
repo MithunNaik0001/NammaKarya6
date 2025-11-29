@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { auth, db, storage, storageBucketName } from "../../lib/firebase";
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { ref as sRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { MdWork, MdBookmark, MdDescription, MdPersonAdd, MdNotifications, MdSearch, MdAdd, MdMoreVert } from 'react-icons/md';
 // Note: we no longer call `updateProfile` on the Auth user here; profile changes
 // are persisted to Firestore only to avoid requiring auth updates from the client.
 
@@ -22,6 +23,14 @@ type Job = {
     meta?: string;
     logoChar?: string;
     logoClass?: string;
+};
+
+type HireProfession = {
+    id: string;
+    searchJob?: string;
+    cityTown?: string;
+    numJobs?: string;
+    createdBy?: string;
 };
 
 export default function HireDashboardPage() {
@@ -158,11 +167,58 @@ export default function HireDashboardPage() {
 
     const [jobViews, setJobViews] = useState<number[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);
+    const [hireProfessions, setHireProfessions] = useState<HireProfession[]>([]);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hireError, setHireError] = useState<string | null>(null);
     const [manualFetch, setManualFetch] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+
+    // Fetch hire-profession data from Firestore
+    const fetchHireProfessions = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            setHireError("Please sign in to view your posted jobs.");
+            return;
+        }
+
+        try {
+            setHireError(null);
+            console.log("Fetching hire-professions for user:", user.uid);
+
+            // Try fetching all documents first (temporary workaround for permissions)
+            const collectionRef = collection(db, "proffessional");
+            const snapshot = await getDocs(collectionRef);
+
+            console.log("Total documents in proffessional:", snapshot.size);
+
+            const data: HireProfession[] = [];
+            snapshot.forEach((doc) => {
+                const docData = doc.data() as HireProfession;
+                console.log("Document:", doc.id, "createdBy:", docData.createdBy, "User:", user.uid);
+
+                // Filter on client side to match current user
+                if (docData.createdBy === user.uid) {
+                    data.push({ id: doc.id, ...docData });
+                }
+            });
+
+            console.log("Filtered documents for current user:", data.length);
+            setHireProfessions(data);
+
+            if (data.length === 0) {
+                setHireError("No jobs posted yet. Create your first job posting!");
+            }
+        } catch (err: any) {
+            console.error("Error fetching hire-professions:", err);
+            setHireError(`Error: ${err.message || 'Failed to load jobs'}. Please check Firestore security rules.`);
+        }
+    };
+
+    useEffect(() => {
+        fetchHireProfessions();
+    }, []);
 
     // Fetch unread notifications count
     useEffect(() => {
@@ -288,12 +344,13 @@ export default function HireDashboardPage() {
 				.time-tabs{margin:20px 0;border-bottom:1px solid var(--color-gray-border);padding-bottom:5px;display:flex;font-size:.9rem}
 				.time-tabs button{background:none;border:none;padding:5px 15px;margin-right:5px;cursor:pointer;color:var(--color-text-subtle);font-weight:500;border-radius:6px 6px 0 0}
 				.time-tabs button.active{background-color:var(--color-bg-light);border-bottom:2px solid var(--color-primary);color:var(--color-primary)}
-				.chart-area{height:250px;position:relative;background:linear-gradient(to top,var(--color-bg-light) 1px,transparent 1px);background-size:100% 50px;display:flex;align-items:flex-end;justify-content:space-around;padding-bottom:20px}
-				.chart-y-axis{position:absolute;left:0;top:0;height:100%;width:30px;font-size:.75rem;color:var(--color-text-subtle)}
-				.chart-x-axis{display:flex;justify-content:space-between;width:100%;position:absolute;bottom:0;padding:0 5%;font-size:.8rem;color:var(--color-text-subtle)}
+				.chart-area{height:250px;position:relative;background:linear-gradient(to top,var(--color-bg-light) 1px,transparent 1px);background-size:100% 50px;display:flex;align-items:flex-end;justify-content:space-around;padding-bottom:20px;padding-left:40px}
+				.chart-y-axis{position:absolute;left:0;top:0;height:100%;width:40px;font-size:.75rem;color:var(--color-text-subtle);display:flex;flex-direction:column;justify-content:space-between;padding:10px 5px;text-align:right}
+				.chart-x-axis{display:flex;justify-content:space-between;width:100%;position:absolute;bottom:0;padding:0 5%;font-size:.8rem;color:var(--color-text-subtle);padding-left:40px}
 				.chart-line-placeholder{position:absolute;width:85%;height:150px;bottom:20px;left:5%;background:linear-gradient(135deg,transparent 0%,transparent 10%,rgba(52,211,153,.3) 10%,rgba(52,211,153,.3) 25%,transparent 25%,transparent 35%,rgba(52,211,153,.3) 35%,rgba(52,211,153,.3) 50%,transparent 50%,transparent 60%,rgba(52,211,153,.3) 60%,rgba(52,211,153,.3) 75%,transparent 75%,transparent 85%,rgba(52,211,153,.3) 85%,rgba(52,211,153,.3) 100%);border:2px solid var(--color-primary);border-top-left-radius:5px;border-top-right-radius:5px;opacity:.7;clip-path:polygon(0 100%,10% 70%,25% 90%,35% 50%,50% 75%,60% 40%,75% 65%,85% 55%,100% 80%,100% 100%,0 100%)}
 				.posted-job-panel{background-color:var(--color-card-bg);padding:20px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,.05)}
 				.job-item{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--color-gray-border)}
+				.job-details{display:flex;align-items:center}
 				.company-logo{width:40px;height:40px;border-radius:50%;background-color:var(--color-bg-light);margin-right:15px;display:flex;justify-content:center;align-items:center;font-weight:700;font-size:1.2rem;color:var(--color-text-subtle)}
 				.company-logo-a{background-color:#f7f7f7;color:#000;font-size:1.5rem}
 				.company-logo-p{background-color:#e0f2fe;color:#0ea5e9;font-size:1.5rem}
@@ -308,73 +365,73 @@ export default function HireDashboardPage() {
                 <main className="main-content">
                     <header className="top-header">
                         <nav className="nav-links">
-                            <a>Home</a>
-                            <a>Job</a>
-                            <a>Explore</a>
-                            <a>Contact</a>
-                            <a>Pages</a>
+
                         </nav>
                         <div className="search-area">
-                            <input className="search-input" placeholder="🔍 Search here..." />
+                            <div style={{ position: 'relative', marginRight: 15 }}>
+                                <MdSearch style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-subtle)', fontSize: '1.2rem' }} />
+                                <input className="search-input" placeholder="Search here..." style={{ paddingLeft: 40 }} />
+                            </div>
                             <Link href="/notifications">
                                 <button className="notification-bell" title="Notifications">
-                                    🔔
+                                    <MdNotifications style={{ fontSize: '1.3rem' }} />
                                     {unreadCount > 0 && (
                                         <span className="notification-badge">{unreadCount}</span>
                                     )}
                                 </button>
                             </Link>
-                            <button className="post-job-btn">Post a Job</button>
+                            <button className="post-job-btn"><MdAdd style={{ fontSize: '1.4rem', marginRight: 5 }} />Post a Job</button>
                         </div>
                     </header>
 
                     <div className="dashboard-body">
                         <h2>Dashboard</h2>
 
-                        {!manualFetch ? (
-                            <div style={{ padding: 20, background: "#fff", borderRadius: 8, border: "1px solid var(--color-gray-border)", marginBottom: 20 }}>
-                                <strong>Data is not loaded.</strong>
-                                <div style={{ marginTop: 8, color: "var(--color-text-subtle)" }}>Click the <em>Refresh</em> button in Posted Job to load stats and jobs.</div>
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <div className="stat-content">
+                                    <div className="stat-number">{hireProfessions.length}</div>
+                                    Posted Job
+                                </div>
+                                <span className="icon stat-icon"><MdWork /></span>
                             </div>
-                        ) : (
-                            <div className="stats-grid">
-                                <div className="stat-card">
-                                    <div className="stat-content">
-                                        <div className="stat-number">{stats.postedJobs}</div>
-                                        Posted Job
-                                    </div>
-                                    <span className="icon stat-icon">👨‍💻</span>
+                            <div className="stat-card">
+                                <div className="stat-content">
+                                    <div className="stat-number">0</div>
+                                    Shortlisted
                                 </div>
-                                <div className="stat-card">
-                                    <div className="stat-content">
-                                        <div className="stat-number">{stats.shortlisted}</div>
-                                        Shortlisted
-                                    </div>
-                                    <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-2)", color: "var(--color-stat-icon-2)" }}>✉️</span>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-content">
-                                        <div className="stat-number">{stats.application}</div>
-                                        Application
-                                    </div>
-                                    <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-4)", color: "var(--color-stat-icon-4)" }}>👀</span>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-content">
-                                        <div className="stat-number">{stats.savedCandidates}</div>
-                                        Save Candidate
-                                    </div>
-                                    <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-4)", color: "var(--color-stat-icon-4)" }}>✏️</span>
-                                </div>
+                                <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-2)", color: "var(--color-stat-icon-2)" }}><MdBookmark /></span>
                             </div>
-                        )}
+                            <div className="stat-card">
+                                <div className="stat-content">
+                                    <div className="stat-number">0</div>
+                                    Application
+                                </div>
+                                <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-4)", color: "var(--color-stat-icon-4)" }}><MdDescription /></span>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-content">
+                                    <div className="stat-number">0</div>
+                                    Save Candidate
+                                </div>
+                                <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-4)", color: "var(--color-stat-icon-4)" }}><MdPersonAdd /></span>
+                            </div>
+                        </div>
 
                         <div className="panels-grid">
                             <div className="job-views-panel">
                                 <h3 style={{ marginBottom: 10 }}>Job Views</h3>
                                 <div className="job-views-header">
                                     <select>
-                                        <option>Web & Mobile Prototype designer...</option>
+                                        {hireProfessions.length > 0 ? (
+                                            hireProfessions.map((hire) => (
+                                                <option key={hire.id} value={hire.id}>
+                                                    {hire.searchJob || 'Untitled Job'}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option>No jobs posted yet...</option>
+                                        )}
                                     </select>
                                 </div>
 
@@ -418,38 +475,54 @@ export default function HireDashboardPage() {
 
                             <div className="posted-job-panel">
                                 <h3 style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <span>Posted Job</span>
-                                    <button onClick={() => {
-                                        setManualFetch(true);
-                                        if (!ENABLE_DASHBOARD_API) {
-                                            setError('Dashboard API is disabled. Enable API using the toggle first.');
-                                            return;
-                                        }
-                                        fetchAll();
-                                    }} disabled={loading} style={{ marginLeft: 12, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--color-gray-border)', background: loading ? '#f1f5f9' : 'transparent', cursor: loading ? 'default' : 'pointer' }}>
-                                        {loading ? 'Refreshing...' : 'Refresh'}
-                                    </button>
-
-                                    <button onClick={() => setAllowApi((s) => !s)} style={{ marginLeft: 8, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--color-gray-border)', background: allowApi ? '#dcfce7' : 'transparent', cursor: 'pointer' }}>
-                                        {allowApi ? 'API Enabled' : 'Enable API'}
+                                    <span>Posted Jobs</span>
+                                    <button
+                                        onClick={fetchHireProfessions}
+                                        style={{
+                                            marginLeft: 'auto',
+                                            padding: '6px 10px',
+                                            borderRadius: 6,
+                                            border: '1px solid var(--color-gray-border)',
+                                            background: 'transparent',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Refresh
                                     </button>
                                 </h3>
 
-                                {manualFetch && loading && <div>Loading jobs...</div>}
-                                {manualFetch && error && <div style={{ color: "red" }}>{error}</div>}
-
-                                {jobs.map((job) => (
-                                    <div className="job-item" key={job.id}>
-                                        <div className="job-details">
-                                            <span className={`company-logo ${job.logoClass || "company-logo-a"}`}>{job.logoChar || "A"}</span>
-                                            <div>
-                                                <div className="job-title">{job.title}</div>
-                                                <div className="job-meta">{job.meta}</div>
-                                            </div>
-                                        </div>
-                                        <span className="more-options">...</span>
+                                {hireError && (
+                                    <div style={{ padding: '15px', marginBottom: '15px', background: '#fee2e2', color: '#991b1b', borderRadius: 8, fontSize: '0.9rem' }}>
+                                        {hireError}
                                     </div>
-                                ))}
+                                )}
+
+                                {hireProfessions.length === 0 && !hireError ? (
+                                    <div style={{ padding: '20px 0', color: 'var(--color-text-subtle)', textAlign: 'center' }}>
+                                        No jobs posted yet
+                                    </div>
+                                ) : (
+                                    hireProfessions.map((hire) => (
+                                        <div className="job-item" key={hire.id}>
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                <span className="company-logo company-logo-p">
+                                                    {hire.searchJob && hire.searchJob[0] ? hire.searchJob[0].toUpperCase() : 'J'}
+                                                </span>
+                                                <div>
+                                                    <div className="job-title">
+                                                        {hire.searchJob || 'Job Position'}
+                                                    </div>
+                                                    <div className="job-meta">
+                                                        {hire.cityTown || 'Location not specified'} • {hire.numJobs || '1'} {hire.numJobs === '1' ? 'Opening' : 'Openings'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-subtle)', fontSize: '1.5rem', padding: 5 }}>
+                                                <MdMoreVert />
+                                            </button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>

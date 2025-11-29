@@ -6,6 +6,7 @@ import { auth, db } from "../../lib/firebase";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import SeekerSidebar from "../../components/SeekerSidebar";
+import { MdLocationOn, MdAttachMoney, MdSchedule, MdPeople, MdSearch, MdFilterList } from 'react-icons/md';
 
 type Job = {
     id: string;
@@ -588,12 +589,12 @@ export default function SeekerJobsPage() {
                                             </Link>
                                             <div className="job-details">
                                                 <div className="detail-item">
-                                                    <span className="detail-icon">📍</span>
+                                                    <MdLocationOn className="detail-icon" />
                                                     <span>{job.cityTown || "Location not specified"}</span>
                                                 </div>
                                                 {job.locality && (
                                                     <div className="detail-item">
-                                                        <span className="detail-icon">📌</span>
+                                                        <MdLocationOn className="detail-icon" style={{ opacity: 0.7 }} />
                                                         <span>{job.locality}</span>
                                                     </div>
                                                 )}
@@ -606,18 +607,18 @@ export default function SeekerJobsPage() {
 
                                     <div className="job-details">
                                         <div className="detail-item">
-                                            <span className="detail-icon">💰</span>
+                                            <MdAttachMoney className="detail-icon" />
                                             <span>{formatIncome(job.minIncome, job.maxIncome)}</span>
                                         </div>
                                         <div className="detail-item">
-                                            <span className="detail-icon">⏰</span>
+                                            <MdSchedule className="detail-icon" />
                                             <span className={`shift-badge ${job.shift}`}>
                                                 {job.shift.charAt(0).toUpperCase() + job.shift.slice(1)} Shift
                                             </span>
                                         </div>
                                         {job.numJobs && (
                                             <div className="detail-item">
-                                                <span className="detail-icon">👥</span>
+                                                <MdPeople className="detail-icon" />
                                                 <span>{job.numJobs} {job.numJobs === "1" ? "position" : "positions"}</span>
                                             </div>
                                         )}

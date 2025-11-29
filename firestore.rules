@@ -26,6 +26,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // seeker-proffession collection (correct spelling)
+    match /seeker-proffession/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null &&
+                    resource.data.createdBy == request.auth.uid;
+    }
+
     // seekerprofile collection (job seeker profile data)
     match /seekerprofile/{docId} {
       // Allow creating profile with matching user ID
@@ -41,6 +50,20 @@ service cloud.firestore {
       // Allow users to delete only their own profile
       allow delete: if request.auth != null &&
                     docId == request.auth.uid;
+    }
+    match /hire-proffesion/{docId} {
+  allow read: if request.auth != null;
+  allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid;
+  allow update, delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
+}
+
+    // hire-proffession collection (with double 's')
+    match /hire-proffession/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.createdBy == request.auth.uid;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null &&
+                    resource.data.createdBy == request.auth.uid;
     }
 
     // orders collection - users can only access their own orders
@@ -62,12 +85,73 @@ service cloud.firestore {
                    );
     }
 
+    // payments collection - users can only access their own payments
+    match /payments/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+    }
+
+    // appliedJobs collection - users can only access their own job applications
+    match /appliedJobs/{docId} {
+      allow create: if request.auth != null &&
+                    request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null &&
+                    resource.data.userId == request.auth.uid;
+    }
+
+    // notifications collection - users can only access their own notifications
+    match /notifications/{docId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && (
+                    // Allow reading if userId matches
+                    resource.data.userId == request.auth.uid ||
+                    // Allow reading if recipientId matches
+                    resource.data.recipientId == request.auth.uid
+                  );
+      allow update: if request.auth != null && (
+                    resource.data.userId == request.auth.uid ||
+                    resource.data.recipientId == request.auth.uid
+                  );
+      allow delete: if request.auth != null && (
+                    resource.data.userId == request.auth.uid ||
+                    resource.data.recipientId == request.auth.uid
+                  );
+    }
+
     // user profile collection
     match /users/{userId} {
       // user can read/write ONLY their own doc
       allow read, write: if request.auth != null &&
                           request.auth.uid == userId;
     }
+
+    // For authenticated users only:
+    match /seeker-professional/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    match /seeker-requirement/{document} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // OR for public read access:
+    // match /seeker-professional/{document} {
+    //   allow read: if true;
+    // }
+    // match /seeker-requirement/{document} {
+    //   allow read: if true;
+    // }
 
     // Default: deny everything else
     match /{document=**} {
