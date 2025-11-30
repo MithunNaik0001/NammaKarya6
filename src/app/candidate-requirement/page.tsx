@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { addDoc, collection } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 // SideNav is provided globally via `src/app/layout.tsx`; don't render a page-level sidebar here.
 
 export default function CandidateRequirementPage() {
+	const searchParams = useSearchParams();
+	const jobId = searchParams.get('jobId');
 	const router = useRouter();
 	const [education, setEducation] = useState<string[]>([]);
 	const [experience, setExperience] = useState<string[]>([]);
@@ -53,6 +56,7 @@ export default function CandidateRequirementPage() {
 			preferredGender: gender,
 			contact: { mobile: mobileClean || null, whatsapp: whatsappClean || null },
 			createdAt: new Date().toISOString(),
+			jobId,
 		};
 
 		const user = auth.currentUser;
@@ -61,8 +65,21 @@ export default function CandidateRequirementPage() {
 		setFeedback('Saving...');
 		setResultVisible(true);
 		try {
-			await addDoc(collection(db, 'candidate-requermen'), payload as any);
-			setFeedback('Saved Requirement.');
+			// Check if a candidate requirement for this jobId already exists
+			const { query, where, getDocs, doc, updateDoc } = await import('firebase/firestore');
+			const reqQuery = query(collection(db, 'candidate-requermen'), where('jobId', '==', jobId));
+			const reqSnapshot = await getDocs(reqQuery);
+			if (!reqSnapshot.empty) {
+				// Update the first found document
+				const reqDoc = reqSnapshot.docs[0];
+				await updateDoc(doc(db, 'candidate-requermen', reqDoc.id), payload);
+				setFeedback('Updated Requirement.');
+			} else {
+				// Create new requirement
+				const { addDoc } = await import('firebase/firestore');
+				await addDoc(collection(db, 'candidate-requermen'), payload);
+				setFeedback('Saved Requirement.');
+			}
 			console.log('Candidate Requirement payload:', payload);
 			// Navigate to the dashboard after save
 			try {

@@ -639,7 +639,7 @@ export default function FindJobPage() {
                                     </a>
                                 )}
                                 <button className="flex-1 bg-gradient-to-r from-[#F1B902] to-[#E7AD01] text-white py-2 px-4 rounded-xl font-semibold hover:opacity-90 transition-opacity text-sm">
-                                    {seeker.hasRequirement ? 'Contact About Job' : 'View Full Profile'}
+                                    Candidate Requirement
                                 </button>
                             </div>
                         </>

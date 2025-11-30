@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { auth, db } from "../../lib/firebase";
-import { collection, query, where, getDocs, doc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, deleteDoc, onSnapshot, addDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import SeekerSidebar from "../../components/SeekerSidebar";
 
@@ -177,6 +177,29 @@ export default function SeekerAppliedJobsPage() {
     function viewDetails(jobId: string) {
         // Navigate to job details page
         window.location.href = `/job-details/${jobId}`;
+    }
+
+    async function handleApply(jobId: string) {
+        const user = auth.currentUser;
+        if (!user) {
+            alert('You must be logged in to apply for jobs.');
+            return;
+        }
+
+        const appliedAt = new Date().toISOString();
+
+        try {
+            await addDoc(collection(db, 'appliedJobs'), {
+                userId: user.uid,
+                jobId,
+                appliedAt,
+                status: 'pending',
+            });
+            alert('Application submitted successfully!');
+        } catch (error) {
+            console.error("Error applying for job:", error);
+            alert('Failed to submit application. Please try again.');
+        }
     }
 
     return (

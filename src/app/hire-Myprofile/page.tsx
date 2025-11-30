@@ -1,6 +1,4 @@
 "use client";
-// Force dynamic rendering to fix Next.js static export error
-export const dynamic = "force-dynamic";
 // TypeScript props for PageContent
 type PageContentProps = {
     nameInputRef: React.RefObject<HTMLInputElement>;
@@ -24,6 +22,7 @@ type PageContentProps = {
     successMsg: string | null;
     handleFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
     handleSave: () => Promise<void>;
+    editParam: string | null | undefined;
 };
 
 // PageContent component to be used inside Suspense
@@ -48,7 +47,8 @@ function PageContent({
     loading,
     successMsg,
     handleFile,
-    handleSave
+    handleSave,
+    editParam
 }: PageContentProps) {
     if (loading) {
         return (
@@ -224,14 +224,24 @@ function PageContent({
 
 
 
-
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from 'next/navigation';
 import { auth, db, storage, storageBucketName } from "../../lib/firebase";
 import { collection, doc, setDoc, addDoc, serverTimestamp, getDoc, onSnapshot } from "firebase/firestore";
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 // We persist profile updates to Firestore only; avoid updating Auth profile here.
 
 export default function HireMyProfilePage() {
+    // Wrap useSearchParams in Suspense boundary as required by Next.js 15
+    const SuspenseSearchParams = () => {
+        const searchParams = useSearchParams();
+        const editParam = searchParams?.get('edit');
+        return { editParam };
+    };
+    const { editParam } = React.useMemo(() => {
+        // This will be replaced by Suspense below
+        return { editParam: undefined };
+    }, []);
     const nameInputRef = useRef<HTMLInputElement | null>(null);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -254,10 +264,12 @@ export default function HireMyProfilePage() {
         }
     }
 
-    // No editParam logic, just keep useEffect for mount
+    // Focus name input when opened via ?edit=1
     useEffect(() => {
-        // No editParam logic
-    }, []);
+        if (editParam === '1') {
+            setTimeout(() => nameInputRef.current?.focus(), 50);
+        }
+    }, [editParam]);
 
     // Load user profile data when component mounts
     useEffect(() => {
@@ -425,28 +437,31 @@ export default function HireMyProfilePage() {
     }
 
     return (
-        <PageContent
-            nameInputRef={nameInputRef}
-            name={name}
-            setName={setName}
-            email={email}
-            setEmail={setEmail}
-            phone={phone}
-            setPhone={setPhone}
-            address={address}
-            setAddress={setAddress}
-            photoPreview={photoPreview}
-            setPhotoPreview={setPhotoPreview}
-            file={file}
-            setFile={setFile}
-            saving={saving}
-            progress={progress}
-            errorMsg={errorMsg}
-            errorStack={errorStack}
-            loading={loading}
-            successMsg={successMsg}
-            handleFile={handleFile}
-            handleSave={handleSave}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+            <PageContent
+                nameInputRef={nameInputRef}
+                name={name}
+                setName={setName}
+                email={email}
+                setEmail={setEmail}
+                phone={phone}
+                setPhone={setPhone}
+                address={address}
+                setAddress={setAddress}
+                photoPreview={photoPreview}
+                setPhotoPreview={setPhotoPreview}
+                file={file}
+                setFile={setFile}
+                saving={saving}
+                progress={progress}
+                errorMsg={errorMsg}
+                errorStack={errorStack}
+                loading={loading}
+                successMsg={successMsg}
+                handleFile={handleFile}
+                handleSave={handleSave}
+                editParam={editParam}
+            />
+        </Suspense>
     );
 }

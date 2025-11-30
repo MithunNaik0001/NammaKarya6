@@ -14,11 +14,11 @@
     },
     "storage": {
       "host": "127.0.0.1",
-      "port": 9399
+      "port": 9499
     },
     "ui": {
       "host": "127.0.0.1",
-      "port": 4200
+      "port": 4300
     },
     "singleProjectMode": true,
     "apphosting": {
@@ -42,8 +42,8 @@
       "port": 9299
     },
     "dataconnect": {
-      "port": 9399,
-      "dataDir": "dataconnect/.dataconnect/pgliteData"
+      "host": "127.0.0.1",
+      "port": 9499
     },
     "tasks": {
       "port": 9499

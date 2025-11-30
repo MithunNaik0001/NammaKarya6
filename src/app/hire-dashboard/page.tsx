@@ -398,14 +398,14 @@ export default function HireDashboardPage() {
                             <div className="stat-card">
                                 <div className="stat-content">
                                     <div className="stat-number">0</div>
-                                    Shortlisted
+                                    Shortliste
                                 </div>
                                 <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-2)", color: "var(--color-stat-icon-2)" }}><MdBookmark /></span>
                             </div>
                             <div className="stat-card">
                                 <div className="stat-content">
                                     <div className="stat-number">0</div>
-                                    Application
+                                    Applicat
                                 </div>
                                 <span className="icon stat-icon" style={{ backgroundColor: "var(--color-stat-4)", color: "var(--color-stat-icon-4)" }}><MdDescription /></span>
                             </div>
@@ -475,7 +475,7 @@ export default function HireDashboardPage() {
 
                             <div className="posted-job-panel">
                                 <h3 style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <span>Posted Jobs</span>
+                                    <span>Posted Job</span>
                                     <button
                                         onClick={fetchHireProfessions}
                                         style={{

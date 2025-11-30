@@ -147,13 +147,12 @@ export default function HireProffesionPage() {
         setIsSaving(true);
         setFeedback('Saving...');
         try {
-            // add to Firestore collection named "proffessional"
-            await addDoc(collection(db, 'proffessional'), payload as any);
+            // add to Firestore collection named "proffessional" and get jobId
+            const jobRef = await addDoc(collection(db, 'proffessional'), payload as any);
             setFeedback('Saved filters — preview in console.');
-            // eslint-disable-next-line no-console
             console.log('Job filter payload saved to Firestore:', payload);
-            // navigate to candidate requirement page
-            router.push('/candidate-requirement');
+            // navigate to candidate requirement page with jobId
+            router.push(`/candidate-requirement?jobId=${jobRef.id}`);
         } catch (err) {
             console.error('Error saving to Firestore', err);
             setFeedback('Failed to save — see console for details.');

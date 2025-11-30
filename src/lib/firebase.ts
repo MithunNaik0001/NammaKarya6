@@ -40,7 +40,7 @@ export const usingStorageEmulator = (process.env.NEXT_PUBLIC_USE_STORAGE_EMULATO
 if (usingStorageEmulator) {
   try {
     // default emulator host/port: localhost:9199
-    connectStorageEmulator(storage, 'localhost', 9199);
+    connectStorageEmulator(storage, '127.0.0.1', 9499);
     // eslint-disable-next-line no-console
     console.info('Connected Firebase Storage to local emulator at localhost:9199');
   } catch (e) {

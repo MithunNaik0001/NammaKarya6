@@ -35,6 +35,7 @@ export default function HireDashboardPage() {
     const [allowApi, setAllowApi] = useState<boolean>(false); // must be enabled in UI to allow calls
     const ENABLE_DASHBOARD_API = ENV_ENABLE && allowApi;
     // Profile editing state
+    const [showPostedJobs, setShowPostedJobs] = useState(false);
     const [editingProfile, setEditingProfile] = useState(false);
     const [profileName, setProfileName] = useState<string>("Jony Rio");
     const [profileMenuLabel, setProfileMenuLabel] = useState<string>("Menu");
@@ -232,7 +233,9 @@ export default function HireDashboardPage() {
     };
 
     useEffect(() => {
-        // no automatic fetch: data will load only when user clicks Refresh
+        // Automatically fetch jobs and stats on mount
+        setManualFetch(true);
+        fetchAll();
     }, []);
 
     return (
@@ -301,7 +304,7 @@ export default function HireDashboardPage() {
                 <main className="main-content">
                     <header className="top-header">
                         <nav className="nav-links">
-                            <a>Home</a>
+                            <a href="/actions">Home</a>
 
                         </nav>
                         <div className="search-area">
@@ -326,7 +329,19 @@ export default function HireDashboardPage() {
                                 <div className="stat-card">
                                     <div className="stat-content">
                                         <div className="stat-number">{stats.postedJobs}</div>
-                                        Posted Jo
+                                        Posted Job
+                                        <button
+                                            style={{ margin: '8px 0', padding: '4px 12px', borderRadius: 6, border: '1px solid var(--color-gray-border)', background: '#F3B802', color: 'white', cursor: 'pointer', fontSize: '0.95rem' }}
+                                            onClick={() => setShowPostedJobs((prev) => !prev)}
+                                        >
+                                            {showPostedJobs ? 'Hide Posted Jobs' : 'Show Posted Jobs'}
+                                        </button>
+                                        {showPostedJobs && jobs.slice(0, 5).map((job) => (
+                                            <div key={job.id} style={{ marginTop: 4, fontSize: '0.95rem', color: 'var(--color-text-subtle)' }}>
+                                                <span style={{ fontWeight: 500 }}>{job.searchJob ? job.searchJob : <span style={{ color: 'red' }}>No job name</span>}</span>
+                                                <span style={{ marginLeft: 8, color: '#888' }}>{job.cityTown ? job.cityTown : <span style={{ color: 'red' }}>No city name</span>}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                     <span className="icon stat-icon"><MdWork /></span>
                                 </div>
@@ -359,7 +374,7 @@ export default function HireDashboardPage() {
                                 <h3 style={{ marginBottom: 10 }}>Job Views</h3>
                                 <div className="job-views-header">
                                     <select>
-                                        <option>Web & Mobile Prototype designer...</option>
+                                        <option>...</option>
                                     </select>
                                 </div>
 
@@ -403,7 +418,7 @@ export default function HireDashboardPage() {
 
                             <div className="posted-job-panel">
                                 <h3 style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <span>Jobs You Can Apply For</span>
+                                    <span>Posted Job</span>
                                     <button onClick={() => {
                                         setManualFetch(true);
                                         fetchAll();

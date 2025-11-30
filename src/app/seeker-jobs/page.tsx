@@ -626,7 +626,9 @@ export default function SeekerJobsPage() {
 
                                     <div className="job-footer">
                                         <span className="posted-date">Posted {formatDate(job.createdAt)}</span>
-                                        <button className="apply-btn">Apply Now</button>
+                                        <Link href={`/job-details/${job.id}`}>
+                                            <button className="apply-btn">candidate requirement</button>
+                                        </Link>
                                     </div>
                                 </div>
                             ))

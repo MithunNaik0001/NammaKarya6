@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { db } from "../../../lib/firebase";
+import { db, auth } from "../../../lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import SeekerSidebar from "../../../components/SeekerSidebar";
 
@@ -42,6 +42,48 @@ export default function JobDetailsPage() {
     const [requirements, setRequirements] = useState<RequirementData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showReq, setShowReq] = useState(false);
+    const [applyLoading, setApplyLoading] = useState(false);
+    const [applySuccess, setApplySuccess] = useState<string | null>(null);
+    const [applyError, setApplyError] = useState<string | null>(null);
+    async function handleApply() {
+        setApplyLoading(true);
+        setApplyError(null);
+        setApplySuccess(null);
+        try {
+            const user = auth.currentUser;
+            if (!user) {
+                setApplyError('You must be signed in to apply.');
+                setApplyLoading(false);
+                return;
+            }
+            // Save applied job directly to Firestore 'appliedJobs' collection
+            const { searchJob, cityTown, createdBy, numJobs, minIncome, maxIncome, shift, jobType, locality } = jobData || {};
+            const appliedJob = {
+                userId: user.uid,
+                title: searchJob || '',
+                company: createdBy || '',
+                location: cityTown || '',
+                type: jobType || '',
+                salary: minIncome && maxIncome ? `₹${minIncome} - ₹${maxIncome}` : '',
+                description: '', // Add if available
+                skills: [], // Add if available
+                status: 'pending',
+                appliedDate: new Date().toISOString().split('T')[0],
+                jobId,
+                seekerName: user.displayName || '',
+                seekerEmail: user.email || '',
+            };
+            // Import Firestore addDoc and collection
+            const { addDoc, collection } = await import('firebase/firestore');
+            await addDoc(collection(db, 'appliedJobs'), appliedJob);
+            setApplySuccess('Applied successfully! The job owner will be notified.');
+        } catch (err) {
+            setApplyError('Failed to apply. Try again.');
+        } finally {
+            setApplyLoading(false);
+        }
+    }
 
     useEffect(() => {
         loadJobDetails();
@@ -491,77 +533,80 @@ export default function JobDetailsPage() {
 
                     {/* Candidate Requirements */}
                     {requirements.length > 0 ? (
-                        requirements.map((req, index) => (
-                            <div key={index} className="section-card">
-                                <h2 className="section-title">
-                                    <span>✅</span>
-                                    Candidate Requirements
-                                </h2>
+                        (() => {
+                            const req = requirements[0];
+                            return (
+                                <div className="section-card">
+                                    <h2 className="section-title">
+                                        <span>✅</span>
+                                        Candidate Requirements
+                                    </h2>
 
-                                {req.minimumEducation && req.minimumEducation.length > 0 && (
-                                    <div style={{ marginBottom: '20px' }}>
-                                        <div className="info-label">Minimum Education</div>
-                                        <div className="tags-list">
-                                            {req.minimumEducation.map((edu, i) => (
-                                                <span key={i} className="tag">🎓 {edu}</span>
-                                            ))}
+                                    {req.minimumEducation && req.minimumEducation.length > 0 && (
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <div className="info-label">Minimum Education</div>
+                                            <div className="tags-list">
+                                                {req.minimumEducation.map((edu, i) => (
+                                                    <span key={i} className="tag">🎓 {edu}</span>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {req.experience && req.experience.length > 0 && (
-                                    <div style={{ marginBottom: '20px' }}>
-                                        <div className="info-label">Experience Required</div>
-                                        <div className="tags-list">
-                                            {req.experience.map((exp, i) => (
-                                                <span key={i} className="tag">💼 {exp}</span>
-                                            ))}
+                                    {req.experience && req.experience.length > 0 && (
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <div className="info-label">Experience Required</div>
+                                            <div className="tags-list">
+                                                {req.experience.map((exp, i) => (
+                                                    <span key={i} className="tag">💼 {exp}</span>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {req.preferredGender && (
-                                    <div style={{ marginBottom: '20px' }}>
-                                        <div className="info-label">Preferred Gender</div>
-                                        <div className="info-value" style={{ marginTop: '8px' }}>
-                                            {req.preferredGender === 'male' ? '👨 Male' :
-                                                req.preferredGender === 'female' ? '👩 Female' :
-                                                    '👥 Any'}
+                                    {req.preferredGender && (
+                                        <div style={{ marginBottom: '20px' }}>
+                                            <div className="info-label">Preferred Gender</div>
+                                            <div className="info-value" style={{ marginTop: '8px' }}>
+                                                {req.preferredGender === 'male' ? '👨 Male' :
+                                                    req.preferredGender === 'female' ? '👩 Female' :
+                                                        '👥 Any'}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {req.contact && (req.contact.mobile || req.contact.whatsapp) && (
-                                    <div>
-                                        <div className="info-label" style={{ marginBottom: '12px' }}>Contact Information</div>
-                                        <div className="contact-info">
-                                            {req.contact.mobile && (
-                                                <div className="contact-item">
-                                                    <span className="contact-icon">📱</span>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-subtle)' }}>Mobile</div>
-                                                        <a href={`tel:${req.contact.mobile}`} className="contact-link">
-                                                            {req.contact.mobile}
-                                                        </a>
+                                    {req.contact && (req.contact.mobile || req.contact.whatsapp) && (
+                                        <div>
+                                            <div className="info-label" style={{ marginBottom: '12px' }}>Contact Information</div>
+                                            <div className="contact-info">
+                                                {req.contact.mobile && (
+                                                    <div className="contact-item">
+                                                        <span className="contact-icon">📱</span>
+                                                        <div>
+                                                            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-subtle)' }}>Mobile</div>
+                                                            <a href={`tel:${req.contact.mobile}`} className="contact-link">
+                                                                {req.contact.mobile}
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                            {req.contact.whatsapp && (
-                                                <div className="contact-item">
-                                                    <span className="contact-icon">💬</span>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-subtle)' }}>WhatsApp</div>
-                                                        <a href={`https://wa.me/91${req.contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="contact-link">
-                                                            {req.contact.whatsapp}
-                                                        </a>
+                                                )}
+                                                {req.contact.whatsapp && (
+                                                    <div className="contact-item">
+                                                        <span className="contact-icon">💬</span>
+                                                        <div>
+                                                            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-subtle)' }}>WhatsApp</div>
+                                                            <a href={`https://wa.me/91${req.contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="contact-link">
+                                                                {req.contact.whatsapp}
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                                    )}
+                                </div>
+                            );
+                        })()
                     ) : (
                         <div className="section-card">
                             <h2 className="section-title">
@@ -576,9 +621,11 @@ export default function JobDetailsPage() {
 
                     {/* Apply Section */}
                     <div className="apply-section">
-                        <h3>Interested in this position?</h3>
-                        <p>Contact the employer to apply for this job opportunity</p>
-                        <button className="apply-btn">Apply Now</button>
+                        <button className="apply-btn" onClick={handleApply} disabled={applyLoading}>
+                            {applyLoading ? 'Applying...' : 'Apply'}
+                        </button>
+                        {applyError && <div style={{ color: 'red', marginTop: 8 }}>{applyError}</div>}
+                        {applySuccess && <div style={{ color: 'green', marginTop: 8 }}>{applySuccess}</div>}
                     </div>
                 </div>
             </div>
