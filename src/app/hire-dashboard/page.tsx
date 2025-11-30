@@ -200,7 +200,7 @@ export default function HireDashboardPage() {
 
                 // Filter on client side to match current user
                 if (docData.createdBy === user.uid) {
-                    data.push({ id: doc.id, ...docData });
+                    data.push({ ...docData, id: doc.id });
                 }
             });
 

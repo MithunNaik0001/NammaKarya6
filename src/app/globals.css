@@ -38,6 +38,7 @@
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 195 100% 50%;
   }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -78,31 +79,33 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Performance optimizations for smoother routing */
   a {
     @apply transition-colors duration-150;
   }
-  
+
   /* Enable GPU acceleration for smoother animations */
   .fade-in {
     animation: fadeIn 0.2s ease-in-out;
     transform: translateZ(0);
     will-change: opacity;
   }
-  
+
   @keyframes fadeIn {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
   }
-  
+
   /* Optimize scroll performance */
   * {
     -webkit-font-smoothing: antialiased;

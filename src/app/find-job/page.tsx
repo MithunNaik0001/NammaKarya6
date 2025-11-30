@@ -339,8 +339,10 @@ export default function FindJobPage() {
 
         if (!prof) return null; // Skip if no professional profile
 
+        // Use a composite key to ensure uniqueness
+        const uniqueKey = `${seeker.userId}-${prof.id || seeker.requirement?.id || 'unknown'}`;
         return (
-            <div key={seeker.userId} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow border-2 border-[#F1B902] overflow-hidden">
+            <div key={uniqueKey} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow border-2 border-[#F1B902] overflow-hidden">
                 {/* Top Banner with Jobs */}
                 <div className="bg-gradient-to-r from-[#F1B902] to-[#E7AD01] px-6 py-4">
                     <div className="flex items-center justify-center text-white">
@@ -649,33 +651,35 @@ export default function FindJobPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-6">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Job Seekers Database</h1>
-                            <p className="text-gray-600 mt-1">
-                                Browse seeker-proffessian and seeker-requirement data
-                            </p>
+            {/* Header hidden from frontend, code preserved for future use */}
+            {false && (
+                <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center py-6">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Job Seekers Database</h1>
+                                <p className="text-gray-600 mt-1">
+                                    Browse seeker-proffessian and seeker-requirement data
+                                </p>
+                            </div>
+                            <button
+                                onClick={fetchJobSeekers}
+                                className="flex items-center gap-2 px-4 py-2 bg-[#F1B902] text-white rounded-lg hover:bg-[#E7AD01] transition-colors"
+                                disabled={loading}
+                            >
+                                <MdRefresh className={loading ? 'animate-spin' : ''} />
+                                Refresh
+                            </button>
+                            <button
+                                onClick={() => setShowDebug(!showDebug)}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                {showDebug ? '👁️ Hide' : '🔍 Debug'}
+                            </button>
                         </div>
-                        <button
-                            onClick={fetchJobSeekers}
-                            className="flex items-center gap-2 px-4 py-2 bg-[#F1B902] text-white rounded-lg hover:bg-[#E7AD01] transition-colors"
-                            disabled={loading}
-                        >
-                            <MdRefresh className={loading ? 'animate-spin' : ''} />
-                            Refresh
-                        </button>
-                        <button
-                            onClick={() => setShowDebug(!showDebug)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            {showDebug ? '👁️ Hide' : '🔍 Debug'}
-                        </button>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Debug Data Display */}
             {showDebug && (

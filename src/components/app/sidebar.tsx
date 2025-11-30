@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import {
   MdDashboard,
   MdPerson,
@@ -16,10 +17,20 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [profileName, setProfileName] = useState<string>('User');
   const [profileMenuLabel, setProfileMenuLabel] = useState<string>('Menu');
   const [photoURL, setPhotoURL] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   useEffect(() => {
     let unsubUserDoc: (() => void) | null = null;
@@ -126,9 +137,29 @@ export default function Sidebar() {
       </nav>
 
       <div style={{ marginTop: 'auto', padding: '0 20px 20px' }}>
-        <a className="logout" style={{ color: 'var(--color-text-subtle)', textDecoration: 'none', display: 'flex', alignItems: 'center', fontSize: '.9rem', gap: '8px' }}>
-          <MdLogout style={{ fontSize: '1rem' }} /> Logout
-        </a>
+        <button
+          onClick={handleLogout}
+          className="logout"
+          style={{
+            color: 'var(--color-text-subtle)',
+            textDecoration: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            fontSize: '.9rem',
+            gap: '8px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            width: '100%',
+            padding: '12px 15px',
+            borderRadius: '8px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <MdLogout style={{ fontSize: '1.2rem' }} /> Logout
+        </button>
       </div>
     </aside>
   );

@@ -23,6 +23,8 @@ type Job = {
     searchJob: string;
     cityTown: string;
     numJobs: string | number;
+    createdBy?: string;
+    appliedBy?: string[];
 };
 
 export default function HireDashboardPage() {
@@ -207,6 +209,8 @@ export default function HireDashboardPage() {
                     searchJob: data.searchJob || 'Untitled Job',
                     cityTown: data.cityTown || 'N/A',
                     numJobs: data.numJobs || 0,
+                    createdBy: data.createdBy || undefined,
+                    appliedBy: Array.isArray(data.appliedBy) ? data.appliedBy : [],
                 });
             });
 
@@ -322,7 +326,7 @@ export default function HireDashboardPage() {
                                 <div className="stat-card">
                                     <div className="stat-content">
                                         <div className="stat-number">{stats.postedJobs}</div>
-                                        Posted Jobs
+                                        Posted Jo
                                     </div>
                                     <span className="icon stat-icon"><MdWork /></span>
                                 </div>
@@ -399,7 +403,7 @@ export default function HireDashboardPage() {
 
                             <div className="posted-job-panel">
                                 <h3 style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <span>My Jobs</span>
+                                    <span>Jobs You Can Apply For</span>
                                     <button onClick={() => {
                                         setManualFetch(true);
                                         fetchAll();
@@ -408,22 +412,62 @@ export default function HireDashboardPage() {
                                     </button>
                                 </h3>
 
-                                {manualFetch && loading && <div>Loading your jobs...</div>}
+                                {manualFetch && loading && <div>Loading jobs you can apply for...</div>}
                                 {manualFetch && error && <div style={{ color: "red" }}>{error}</div>}
 
-                                {jobs.length === 0 && manualFetch && !loading && (
-                                    <div style={{ padding: 20, textAlign: 'center', color: 'var(--color-text-subtle)' }}>
-                                        No jobs found. Start by adding your professional information.
-                                    </div>
-                                )}
+                                {/* Filter jobs to show only those the user has not applied for and did not create */}
+                                {manualFetch && !loading && jobs.filter(job => {
+                                    const userId = auth.currentUser?.uid;
+                                    if (!userId) return false; // If not logged in, show no jobs
+                                    return job.createdBy !== userId && !(job.appliedBy && job.appliedBy.includes(userId));
+                                }).length === 0 && (
+                                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--color-text-subtle)' }}>
+                                            No jobs available for you to apply.
+                                        </div>
+                                    )}
 
-                                {jobs.map((job) => (
+                                {manualFetch && !loading && jobs.filter(job => {
+                                    const userId = auth.currentUser?.uid;
+                                    if (!userId) return false;
+                                    return job.createdBy !== userId && !(job.appliedBy && job.appliedBy.includes(userId));
+                                }).map((job) => (
                                     <div className="job-item" key={job.id}>
                                         <div className="job-details" style={{ display: 'flex', alignItems: 'center' }}>
                                             <span className="company-logo company-logo-p">J</span>
                                             <div>
-                                                <div className="job-title">{job.searchJob}</div>
-                                                <div className="job-meta">{job.cityTown} • {job.numJobs} position{job.numJobs !== 1 ? 's' : ''}</div>
+                                                <div className="job-title">{job.searchJob ? job.searchJob : <span style={{ color: 'red' }}>No job name</span>}</div>
+                                                <div className="job-meta">{job.cityTown ? job.cityTown : <span style={{ color: 'red' }}>No city name</span>}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* New section: Jobs user has already applied for */}
+                            <div className="posted-job-panel" style={{ marginTop: 32 }}>
+                                <h3 style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, color: '#2563eb' }}>
+                                    <span>Jobs You Have Applied For</span>
+                                </h3>
+                                {manualFetch && !loading && jobs.filter(job => {
+                                    const userId = auth.currentUser?.uid;
+                                    if (!userId) return false;
+                                    return job.appliedBy && job.appliedBy.includes(userId);
+                                }).length === 0 && (
+                                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--color-text-subtle)' }}>
+                                            You have not applied for any jobs yet.
+                                        </div>
+                                    )}
+                                {manualFetch && !loading && jobs.filter(job => {
+                                    const userId = auth.currentUser?.uid;
+                                    if (!userId) return false;
+                                    return job.appliedBy && job.appliedBy.includes(userId);
+                                }).map((job) => (
+                                    <div className="job-item" key={job.id}>
+                                        <div className="job-details" style={{ display: 'flex', alignItems: 'center' }}>
+                                            <span className="company-logo company-logo-p">J</span>
+                                            <div>
+                                                <div className="job-title">{job.searchJob ? job.searchJob : <span style={{ color: 'red' }}>No job name</span>}</div>
+                                                <div className="job-meta">{job.cityTown ? job.cityTown : <span style={{ color: 'red' }}>No city name</span>}</div>
                                             </div>
                                         </div>
                                     </div>

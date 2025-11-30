@@ -98,7 +98,7 @@ export default function CandidateRequirementPage() {
 					<div className="mb-4">
 						<label className="block font-semibold mb-2">Minimum education</label>
 						<div className="flex gap-2 flex-wrap">
-							{['10th', '12th', 'Diploma', 'Graduate'].map((lvl) => (
+							{['None', '10th', '12th', 'Diploma', 'Graduate'].map((lvl) => (
 								<button
 									key={lvl}
 									type="button"

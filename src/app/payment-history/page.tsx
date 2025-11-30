@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { MdPayment, MdCheckCircle, MdCancel, MdPending, MdDelete, MdInfo, MdClear } from 'react-icons/md';
+import { FaGooglePay, FaPhoneSquare } from 'react-icons/fa';
+import { SiPhonepe } from 'react-icons/si';
 import { collection, query, where, getDocs, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 
 type Order = {
@@ -251,25 +253,11 @@ export default function Page(): JSX.Element {
                             <div className="mastercard">Mastercard</div>
                         </div>
                         <div className="payment-card google-pay" title="Google Pay" onClick={() => setShowForm(true)}>
-                            <svg className="pay-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <path fill="#4285F4" d="M24 12c3 0 5.5 1.2 7.4 3.2l3.8-3.8C33.5 8 28.9 6 24 6 15.6 6 8.7 10.8 5 18l4 3.1C11.4 14.6 17 12 24 12z" />
-                                <path fill="#34A853" d="M6.6 20.9A18 18 0 0 0 6 24c0 1.5.2 3 .6 4.4L11 29.3C10.6 27.8 10.4 26 10.4 24c0-1.1.1-2.2.2-3.3l-4-0.8z" />
-                                <path fill="#FBBC05" d="M24 42c5 0 9.3-1.8 12.7-4.8l-5.2-4.1C30.3 35 27.3 36 24 36c-6.9 0-12.5-2.6-14.9-7.1L6 31c3.6 6.9 10.9 11 18 11z" />
-                                <path fill="#EA4335" d="M41.4 16.1H24v7h10.3c-.9 2.4-2.9 4.3-5.4 5.3l5.2 4.1C40.9 33.6 44 29.3 44 24c0-1.5-.2-3-.6-4.4l-2 0.5z" />
-                            </svg>
+                            <FaGooglePay className="pay-icon" style={{ color: '#4285F4', fontSize: 36 }} />
                             <span className="method-label">Google Pay</span>
                         </div>
                         <div className="payment-card phonepe-pay" title="PhonePe">
-                            <svg className="pay-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <defs>
-                                    <linearGradient id="ppGrad" x1="0" x2="1" y1="0" y2="1">
-                                        <stop offset="0" stopColor="#6A3AF7" />
-                                        <stop offset="1" stopColor="#8B5CFF" />
-                                    </linearGradient>
-                                </defs>
-                                <rect rx="8" width="48" height="48" fill="url(#ppGrad)" />
-                                <path d="M30 16c-2 0-3.5 1.4-3.8 3.2-.2 1.1.2 2.2 1.1 2.9 1 .8 2.5 1.2 3.7 1.8 2.4 1.2 3.8 3 3.8 5.1 0 3.3-2.8 5.5-6.3 5.5-3.1 0-5.5-1.6-6.5-3.4l3-1.9c.7 1 2 1.9 3.6 1.9 1.6 0 2.7-.8 2.7-1.9 0-1-.6-1.6-2.1-2.3-1.4-.6-3.6-1.2-4.8-2.1-1.6-1.2-2.4-2.7-2.4-4.6 0-3.2 2.8-5 5.8-5 2.2 0 4.1.8 5.1 2.1l-2.9 1.9c-.6-0.7-1.6-1.3-2.9-1.3z" fill="#fff" />
-                            </svg>
+                            <SiPhonepe className="pay-icon" style={{ color: '#6A3AF7', fontSize: 36 }} />
                             <span className="method-label">PhonePe</span>
                         </div>
                     </div>
