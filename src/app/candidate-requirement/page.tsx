@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -7,8 +6,12 @@ import { useRouter } from 'next/navigation';
 import { addDoc, collection } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 // SideNav is provided globally via `src/app/layout.tsx`; don't render a page-level sidebar here.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
-export default function CandidateRequirementPage() {
+import { Suspense } from 'react';
+
+function CandidateRequirementPageInner() {
 	const searchParams = useSearchParams();
 	const jobId = searchParams.get('jobId');
 	const router = useRouter();
@@ -109,7 +112,6 @@ export default function CandidateRequirementPage() {
 				<div className="bg-white rounded-xl p-6 shadow border">
 					<div className="flex items-center justify-between">
 						<h1 className="text-xl font-semibold mb-4">Candidate Requirement</h1>
-
 					</div>
 
 					<div className="mb-4">
@@ -181,4 +183,12 @@ export default function CandidateRequirementPage() {
 		</div>
 	);
 }
+
+const CandidateRequirementPage = () => (
+	<Suspense fallback={<div>Loading...</div>}>
+		<CandidateRequirementPageInner />
+	</Suspense>
+);
+
+export default CandidateRequirementPage;
 
